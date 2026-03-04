@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 1 of 3 (Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-04 — Roadmap created; 16 v1 requirements mapped across 3 phases
+Plan: 1 of 4 in current phase (01-01 complete)
+Status: In progress
+Last activity: 2026-03-04 — 01-01 complete: TypeScript ESM scaffold, shared types, vitest config
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 8% (1/12 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: ~1 min
+- Total execution time: ~1 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation | 1 | ~1 min | ~1 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 01-01 (~1 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -44,6 +44,9 @@ Recent decisions affecting current work:
 
 - [Roadmap]: Container isolation (Docker) chosen over worktrees-only; IPC protocol must be designed in Phase 1 — retrofitting is expensive
 - [Roadmap]: Coarse granularity applied — 3 phases cover 16 requirements; research suggests Node.js/TypeScript ESM-native stack
+- [01-01]: NodeNext module/moduleResolution chosen over bundler/ESNext — required for native Node.js ESM runtime (not bundler-transformed)
+- [01-01]: src/types/index.ts is a zero-import leaf node — enforces clean dependency direction across all subsystems
+- [01-01]: vitest@2.x chosen over jest — native ESM support without transform configuration
 
 ### Pending Todos
 
@@ -57,5 +60,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Roadmap created and written to disk; ready to plan Phase 1
+Stopped at: Completed 01-01-PLAN.md — TypeScript ESM scaffold, shared types, vitest config
 Resume file: None
