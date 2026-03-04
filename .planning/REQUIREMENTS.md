@@ -7,14 +7,14 @@
 
 ### Prompt Templates
 
-- [ ] **TMPL-01**: User can define a prompt template as a file with `{{variable}}` substitution syntax
-- [ ] **TMPL-02**: User can compose a prompt from multiple partial template files (section composition)
-- [ ] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
+- [x] **TMPL-01**: User can define a prompt template as a file with `{{variable}}` substitution syntax
+- [x] **TMPL-02**: User can compose a prompt from multiple partial template files (section composition)
+- [x] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
 
 ### Container Isolation
 
-- [ ] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
-- [ ] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
+- [x] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
+- [x] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
 
 ### Task Execution
 
@@ -33,8 +33,8 @@
 
 ### Git Integration
 
-- [ ] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
-- [ ] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
+- [x] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
+- [x] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
 
 ## v2 Requirements
 
@@ -68,13 +68,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TMPL-01 | Phase 1 | Pending |
-| TMPL-02 | Phase 1 | Pending |
-| TMPL-03 | Phase 1 | Pending |
-| CONT-01 | Phase 1 | Pending |
-| CONT-02 | Phase 1 | Pending |
-| GIT-01 | Phase 1 | Pending |
-| GIT-02 | Phase 1 | Pending |
+| TMPL-01 | Phase 1 | Complete |
+| TMPL-02 | Phase 1 | Complete |
+| TMPL-03 | Phase 1 | Complete |
+| CONT-01 | Phase 1 | Complete |
+| CONT-02 | Phase 1 | Complete |
+| GIT-01 | Phase 1 | Complete |
+| GIT-02 | Phase 1 | Complete |
 | EXEC-01 | Phase 2 | Pending |
 | EXEC-02 | Phase 2 | Pending |
 | EXEC-03 | Phase 2 | Pending |
