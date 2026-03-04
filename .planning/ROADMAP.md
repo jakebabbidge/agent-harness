@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — TypeScript ESM project scaffold with shared types and test infrastructure
 - [ ] 01-02-PLAN.md — Prompt template engine (TMPL-01, TMPL-02, TMPL-03) using Handlebars
-- [ ] 01-03-PLAN.md — Git worktree isolation and branch tracker (GIT-01, GIT-02)
+- [x] 01-03-PLAN.md — Git worktree isolation and branch tracker (GIT-01, GIT-02)
 - [ ] 01-04-PLAN.md — Docker container lifecycle manager with isolation and SIGKILL-safe cleanup (CONT-01, CONT-02)
 
 ### Phase 2: Single-Task Execution
@@ -65,6 +65,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/4 | In Progress|  |
+| 1. Foundation | 2/4 | In Progress|  |
 | 2. Single-Task Execution | 0/TBD | Not started | - |
 | 3. Concurrent Workflow Engine | 0/TBD | Not started | - |

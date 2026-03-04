@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 1 of 3 (Foundation)
-Plan: 1 of 4 in current phase (01-01 complete)
+Plan: 3 of 4 in current phase (01-01, 01-03 complete)
 Status: In progress
-Last activity: 2026-03-04 — 01-01 complete: TypeScript ESM scaffold, shared types, vitest config
+Last activity: 2026-03-04 — 01-03 complete: git worktree isolation, branch tracker, 17 tests green
 
-Progress: [█░░░░░░░░░] 8% (1/12 plans estimated)
+Progress: [██░░░░░░░░] 17% (2/12 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: ~1 min
-- Total execution time: ~1 min
+- Total plans completed: 2
+- Average duration: ~1.5 min
+- Total execution time: ~3 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 1 | ~1 min | ~1 min |
+| 01-foundation | 2 | ~3 min | ~1.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~1 min)
+- Last 5 plans: 01-01 (~1 min), 01-03 (~2 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -47,6 +47,10 @@ Recent decisions affecting current work:
 - [01-01]: NodeNext module/moduleResolution chosen over bundler/ESNext — required for native Node.js ESM runtime (not bundler-transformed)
 - [01-01]: src/types/index.ts is a zero-import leaf node — enforces clean dependency direction across all subsystems
 - [01-01]: vitest@2.x chosen over jest — native ESM support without transform configuration
+- [01-03]: Branch conflict: fail-fast (error on duplicate branch) rather than --force reuse — safer, prevents silent state corruption
+- [01-03]: execFile over exec for git commands — eliminates shell injection surface
+- [01-03]: Optional BranchTracker parameter on createWorktree/removeWorktree — enables isolated git-op unit tests
+- [01-03]: Void-fire save() on mutations — persistence is best-effort, does not block synchronous register/unregister API
 
 ### Pending Todos
 
@@ -60,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 01-01-PLAN.md — TypeScript ESM scaffold, shared types, vitest config
+Stopped at: Completed 01-03-PLAN.md — git worktree isolation, branch tracker, 17 tests green
 Resume file: None
