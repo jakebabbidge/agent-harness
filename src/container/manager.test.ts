@@ -1,12 +1,21 @@
 // @integration — requires Docker socket
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { existsSync } from 'fs';
 import Dockerode from 'dockerode';
 import { ContainerManager, createContainerManager } from './manager.js';
 import { ContainerRegistry } from './registry.js';
 
-const hasDocker = existsSync('/var/run/docker.sock');
-const docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
+// Use DOCKER_AVAILABLE env var if set; otherwise fall back to socket file existence.
+// Note: socket file may exist but Docker daemon may not be running (e.g. Docker Desktop stopped).
+// Set DOCKER_AVAILABLE=1 in environments where Docker daemon is confirmed running.
+const hasDocker =
+  process.env.DOCKER_AVAILABLE === '1' || process.env.DOCKER_AVAILABLE === 'true'
+    ? true
+    : existsSync('/var/run/docker.sock') && process.env.DOCKER_AVAILABLE !== '0';
+
+const DOCKER_SOCKET =
+  process.env.DOCKER_HOST?.replace('unix://', '') ?? '/var/run/docker.sock';
+const docker = new Dockerode({ socketPath: DOCKER_SOCKET });
 
 // Track containers created during tests for cleanup
 const createdContainerIds: string[] = [];
@@ -87,15 +96,12 @@ describe.skipIf(!hasDocker)('ContainerRegistry', () => {
 });
 
 describe.skipIf(!hasDocker)('ContainerManager integration', () => {
-  const IMAGE = 'node:20-alpine';
   let manager: ContainerManager;
 
-  beforeEachSetup();
-
-  function beforeEachSetup() {
+  beforeEach(() => {
     // Re-create manager before each test for isolation
     manager = createContainerManager();
-  }
+  });
 
   it('createContainer returns ContainerInfo with correct taskId and containerName pattern', async () => {
     const taskId = `test-create-${Date.now()}`;
@@ -112,6 +118,8 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
 
     // Clean up
     await manager.stopContainer(taskId);
+    const idx = createdContainerIds.indexOf(info.containerId);
+    if (idx !== -1) createdContainerIds.splice(idx, 1);
   }, 30_000);
 
   it('inspect after createContainer shows correct isolation HostConfig flags', async () => {
@@ -131,9 +139,11 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
 
     // Clean up
     await manager.stopContainer(taskId);
+    const idx = createdContainerIds.indexOf(info.containerId);
+    if (idx !== -1) createdContainerIds.splice(idx, 1);
   }, 30_000);
 
-  it('stopContainer removes the container from Docker and from registry', async () => {
+  it('stopContainer removes the container from registry and it no longer exists in Docker', async () => {
     const taskId = `test-stop-${Date.now()}`;
     const repoPath = '/tmp';
 
@@ -156,7 +166,12 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
       const c = docker.getContainer(containerId);
       await c.inspect();
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'statusCode' in err && (err as { statusCode: number }).statusCode === 404) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'statusCode' in err &&
+        (err as { statusCode: number }).statusCode === 404
+      ) {
         containerGone = true;
       }
     }
@@ -171,7 +186,7 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
     // Create a container directly via dockerode, bypassing the manager
     const orphanName = `agent-harness-orphan-${Date.now()}`;
     const c = await docker.createContainer({
-      Image: IMAGE,
+      Image: 'node:20-alpine',
       name: orphanName,
       Cmd: ['sh', '-c', 'sleep 60'],
       Labels: { 'agent-harness': 'true', 'agent-harness.task-id': 'orphan-task' },
@@ -186,7 +201,7 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
     // reclaimOrphans should force-remove it
     await manager.reclaimOrphans();
 
-    // Wait a moment
+    // Wait a moment for Docker to process
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     let orphanGone = false;
@@ -194,7 +209,12 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
       const container = docker.getContainer(c.id);
       await container.inspect();
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'statusCode' in err && (err as { statusCode: number }).statusCode === 404) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'statusCode' in err &&
+        (err as { statusCode: number }).statusCode === 404
+      ) {
         orphanGone = true;
       }
     }
