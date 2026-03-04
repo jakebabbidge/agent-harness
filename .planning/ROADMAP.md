@@ -1,0 +1,64 @@
+# Roadmap: Agent Harness
+
+## Overview
+
+Agent Harness is built in three coarse phases that mirror the natural dependency chain: first establish the infrastructure foundation (containers, git worktrees, prompt templates, IPC protocol), then prove single-task execution end-to-end including human-in-the-loop question surfacing, then unlock the full value proposition with concurrent fan-out, conditional routing, and workflow resilience. Each phase delivers something independently verifiable before the next begins.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Foundation** - Container infrastructure, git worktree isolation, prompt template engine, and IPC protocol — everything downstream phases depend on
+- [ ] **Phase 2: Single-Task Execution** - End-to-end: run one workflow node with a prompt against a repo, capture structured output, surface agent questions to the CLI operator, and resume on answer
+- [ ] **Phase 3: Concurrent Workflow Engine** - Fan-out parallel execution across isolated containers, conditional routing, and workflow resume after crash
+
+## Phase Details
+
+### Phase 1: Foundation
+**Goal**: The core infrastructure exists, is safe under all failure modes, and is ready for task execution to be built on top
+**Depends on**: Nothing (first phase)
+**Requirements**: TMPL-01, TMPL-02, TMPL-03, CONT-01, CONT-02, GIT-01, GIT-02
+**Success Criteria** (what must be TRUE):
+  1. A Docker container can be created, started, and stopped by the harness; containers are cleaned up on both normal exit and SIGKILL crash (no zombie containers)
+  2. Container network and filesystem access is restricted — agent process cannot make unrestricted outbound network calls or access arbitrary host filesystem paths
+  3. Each task gets its own git worktree scoped to a unique branch; two concurrent task worktrees do not share filesystem state
+  4. A prompt template file with `{{variable}}` syntax renders correctly with provided values; user can dry-run render to inspect the final prompt before any execution
+  5. Multiple partial template files compose into a single rendered prompt
+**Plans**: TBD
+
+### Phase 2: Single-Task Execution
+**Goal**: A single workflow node executes Claude Code in a container, the agent can ask a question mid-task that pauses execution and is answered by the CLI operator, and the run produces structured output persisted to disk
+**Depends on**: Phase 1
+**Requirements**: EXEC-01, EXEC-02, EXEC-03, EXEC-04, WKFL-01, WKFL-02
+**Success Criteria** (what must be TRUE):
+  1. User runs `agent-harness run <template> <repo>` and the agent executes in an isolated container, producing a result
+  2. A YAML workflow file with a single node can be defined and executed end-to-end with `agent-harness run workflow.yaml`
+  3. When the agent asks a question during a run, execution pauses and the question is displayed at the CLI — the run does not crash or time out
+  4. The CLI operator provides an answer via `agent-harness answer <run-id> "<answer>"` and the agent resumes execution
+  5. Agent output is written to a designated markdown file and the harness reads it as the structured task result; the run exits with a correct exit code
+**Plans**: TBD
+
+### Phase 3: Concurrent Workflow Engine
+**Goal**: Multiple workflow nodes run in parallel across isolated containers with their own git worktrees, workflow edges can route conditionally based on node output, and an interrupted workflow can be resumed from its last completed node
+**Depends on**: Phase 2
+**Requirements**: WKFL-03, WKFL-04, WKFL-05
+**Success Criteria** (what must be TRUE):
+  1. A workflow with two independent nodes fans out and executes both nodes concurrently in separate containers with separate git worktrees
+  2. A workflow edge with a condition routes to different downstream nodes based on a field in the upstream node's output
+  3. A workflow interrupted mid-run (process killed) can be resumed with `agent-harness resume <run-id>` and continues from the last completed node without re-running already-completed nodes
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation | 0/TBD | Not started | - |
+| 2. Single-Task Execution | 0/TBD | Not started | - |
+| 3. Concurrent Workflow Engine | 0/TBD | Not started | - |
