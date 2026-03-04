@@ -28,7 +28,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Each task gets its own git worktree scoped to a unique branch; two concurrent task worktrees do not share filesystem state
   4. A prompt template file with `{{variable}}` syntax renders correctly with provided values; user can dry-run render to inspect the final prompt before any execution
   5. Multiple partial template files compose into a single rendered prompt
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — TypeScript ESM project scaffold with shared types and test infrastructure
+- [ ] 01-02-PLAN.md — Prompt template engine (TMPL-01, TMPL-02, TMPL-03) using Handlebars
+- [ ] 01-03-PLAN.md — Git worktree isolation and branch tracker (GIT-01, GIT-02)
+- [ ] 01-04-PLAN.md — Docker container lifecycle manager with isolation and SIGKILL-safe cleanup (CONT-01, CONT-02)
 
 ### Phase 2: Single-Task Execution
 **Goal**: A single workflow node executes Claude Code in a container, the agent can ask a question mid-task that pauses execution and is answered by the CLI operator, and the run produces structured output persisted to disk
@@ -59,6 +65,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/4 | Not started | - |
 | 2. Single-Task Execution | 0/TBD | Not started | - |
 | 3. Concurrent Workflow Engine | 0/TBD | Not started | - |
