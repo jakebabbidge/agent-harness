@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: executing
+stopped_at: Completed 01-04-PLAN.md — ContainerManager with SIGKILL-safe AutoRemove, network isolation, 8 tests green, manual checkpoint verified
+last_updated: "2026-03-04T12:49:34.642Z"
+last_activity: "2026-03-04 — 01-02 complete: Handlebars template engine, async loader, dryRunRender, 16 tests green"
+progress:
+  total_phases: 3
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 4
+  percent: 100
+---
+
 # Project State
 
 ## Project Reference
@@ -14,7 +30,7 @@ Plan: 3 of 4 in current phase (01-01, 01-02, 01-03 complete)
 Status: In progress
 Last activity: 2026-03-04 — 01-02 complete: Handlebars template engine, async loader, dryRunRender, 16 tests green
 
-Progress: [███░░░░░░░] 25% (3/12 plans estimated)
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -34,6 +50,7 @@ Progress: [███░░░░░░░] 25% (3/12 plans estimated)
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01-foundation P04 | 25 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -55,6 +72,9 @@ Recent decisions affecting current work:
 - [01-02]: Partial name from path.basename without extension — maps system-prompt.hbs to 'system-prompt' matching {{> system-prompt}} syntax
 - [01-02]: Namespace import 'import * as Handlebars' required by esModuleInterop: false in tsconfig
 - [01-02]: Test fixtures use mkdtemp unique dir + simple filenames so partial names match template references
+- [Phase 01-foundation]: AutoRemove=true means harness must NOT call container.remove() after stop() — Docker daemon owns container cleanup on SIGKILL
+- [Phase 01-foundation]: NetworkMode=none blocks DNS resolution entirely, not just TCP — wget: bad address confirms no outbound traffic possible
+- [Phase 01-foundation]: Constructor injection for Dockerode instance — ContainerManager takes docker client in constructor, createContainerManager() factory wraps default
 
 ### Pending Todos
 
@@ -67,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Completed 01-02-PLAN.md — Handlebars template engine, async loader, dryRunRender, 16 tests green
+Last session: 2026-03-04T12:49:34.640Z
+Stopped at: Completed 01-04-PLAN.md — ContainerManager with SIGKILL-safe AutoRemove, network isolation, 8 tests green, manual checkpoint verified
 Resume file: None
