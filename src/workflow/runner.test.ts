@@ -8,10 +8,29 @@ vi.mock('../template/renderer.js', () => ({
   renderTemplate: vi.fn(),
 }));
 
+// Mock worktree module -- createWorktree returns a predictable WorktreeInfo
+vi.mock('../git/worktree.js', () => ({
+  createWorktree: vi.fn().mockImplementation(
+    async (repoPath: string, taskId: string, baseBranch: string) => ({
+      taskId,
+      worktreePath: `${repoPath}/.worktrees/${taskId}/`,
+      branchName: `agent-harness/task-${taskId}`,
+      baseBranch,
+      createdAt: new Date(),
+    }),
+  ),
+  removeWorktree: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { renderTemplate } from '../template/renderer.js';
+import { createWorktree, removeWorktree } from '../git/worktree.js';
+import { BranchTracker } from '../git/tracker.js';
 import { runWorkflow } from './runner.js';
 import { createStateManager } from './state.js';
 import type { WorkflowDef, WorkflowRunState } from '../types/index.js';
+
+const mockCreateWorktree = vi.mocked(createWorktree);
+const mockRemoveWorktree = vi.mocked(removeWorktree);
 
 // Helper to make a mock executor with optional per-node delays
 function makeMockExecutor(
@@ -344,5 +363,136 @@ describe('WorkflowRunner', () => {
     expect(result.nodeResults).toHaveLength(2);
     expect(result.nodeResults.find((r) => r.nodeId === 'A')?.result.resultText).toBe('result-a');
     expect(result.nodeResults.find((r) => r.nodeId === 'B')?.result.resultText).toBe('result-b');
+  });
+
+  // --- Worktree isolation ---
+
+  describe('worktree isolation', () => {
+    it('worktree: each node gets its own worktree path', async () => {
+      const workflow: WorkflowDef = {
+        version: '1.0',
+        nodes: [
+          { id: 'W1', template: 'templates/W1.hbs', repo: '/repo/W1', variables: {} },
+        ],
+        edges: [],
+      };
+      const tracker = new BranchTracker();
+      const mock = makeMockExecutor({
+        W1: { exitCode: 0, resultText: 'done' },
+      });
+
+      await runWorkflow(workflow, mock as never, {
+        stateManager,
+        tracker,
+        baseBranch: 'main',
+      });
+
+      // createWorktree should have been called with the node's repo
+      expect(mockCreateWorktree).toHaveBeenCalledWith(
+        '/repo/W1',
+        expect.stringContaining('W1'),
+        'main',
+        tracker,
+      );
+
+      // executor should receive the worktree path, NOT node.repo
+      const executorCall = mock.executeTask.mock.calls[0];
+      const repoArg = executorCall[1];
+      expect(repoArg).toContain('.worktrees/');
+      expect(repoArg).not.toBe('/repo/W1');
+    });
+
+    it('worktree: cleanup happens even when node fails', async () => {
+      const workflow: WorkflowDef = {
+        version: '1.0',
+        nodes: [
+          { id: 'F1', template: 'templates/F1.hbs', repo: '/repo/F1', variables: {} },
+        ],
+        edges: [],
+      };
+      const tracker = new BranchTracker();
+      const mock = makeMockExecutor({
+        F1: { exitCode: 0, resultText: 'ok' },
+      });
+      // Override to throw
+      mock.executeTask.mockRejectedValueOnce(new Error('node exploded'));
+
+      await runWorkflow(workflow, mock as never, {
+        stateManager,
+        tracker,
+        baseBranch: 'main',
+      });
+
+      // removeWorktree must still be called even after failure
+      expect(mockRemoveWorktree).toHaveBeenCalledWith(
+        '/repo/F1',
+        expect.stringContaining('F1'),
+        tracker,
+      );
+    });
+
+    it('tracker: BranchTracker is passed to createWorktree', async () => {
+      const workflow: WorkflowDef = {
+        version: '1.0',
+        nodes: [
+          { id: 'T1', template: 'templates/T1.hbs', repo: '/repo/T1', variables: {} },
+        ],
+        edges: [],
+      };
+      const tracker = new BranchTracker();
+
+      const mock = makeMockExecutor({
+        T1: { exitCode: 0, resultText: 'ok' },
+      });
+
+      await runWorkflow(workflow, mock as never, {
+        stateManager,
+        tracker,
+        baseBranch: 'develop',
+      });
+
+      // Verify tracker instance is passed through
+      expect(mockCreateWorktree).toHaveBeenCalledWith(
+        '/repo/T1',
+        expect.any(String),
+        'develop',
+        tracker,
+      );
+    });
+
+    it('worktree: two concurrent nodes get separate worktree paths', async () => {
+      const workflow: WorkflowDef = {
+        version: '1.0',
+        nodes: [
+          { id: 'C1', template: 'templates/C1.hbs', repo: '/repo/shared', variables: {} },
+          { id: 'C2', template: 'templates/C2.hbs', repo: '/repo/shared', variables: {} },
+        ],
+        edges: [],
+      };
+      const tracker = new BranchTracker();
+      const mock = makeMockExecutor({
+        C1: { exitCode: 0, resultText: 'c1' },
+        C2: { exitCode: 0, resultText: 'c2' },
+      });
+
+      await runWorkflow(workflow, mock as never, {
+        stateManager,
+        tracker,
+        baseBranch: 'main',
+      });
+
+      // createWorktree called twice with different taskIds
+      expect(mockCreateWorktree).toHaveBeenCalledTimes(2);
+      const taskId1 = mockCreateWorktree.mock.calls[0][1];
+      const taskId2 = mockCreateWorktree.mock.calls[1][1];
+      expect(taskId1).not.toBe(taskId2);
+
+      // executor receives two different worktree paths
+      const repo1 = mock.executeTask.mock.calls[0][1];
+      const repo2 = mock.executeTask.mock.calls[1][1];
+      expect(repo1).toContain('.worktrees/');
+      expect(repo2).toContain('.worktrees/');
+      expect(repo1).not.toBe(repo2);
+    });
   });
 });
