@@ -9,12 +9,12 @@
 
 - [x] **TMPL-01**: User can define a prompt template as a file with `{{variable}}` substitution syntax
 - [x] **TMPL-02**: User can compose a prompt from multiple partial template files (section composition)
-- [x] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
+- [ ] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
 
 ### Container Isolation
 
-- [x] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
-- [x] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
+- [ ] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
+- [ ] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
 
 ### Task Execution
 
@@ -29,12 +29,12 @@
 - [x] **WKFL-02**: Workflow engine executes nodes sequentially in a defined linear chain
 - [x] **WKFL-03**: Workflow engine executes independent nodes in parallel (fan-out concurrent execution)
 - [x] **WKFL-04**: Workflow edges can define conditions based on node output to route to different next nodes
-- [x] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
+- [ ] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
 
 ### Git Integration
 
-- [x] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
-- [x] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
+- [ ] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
+- [ ] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
 
 ## v2 Requirements
 
@@ -70,11 +70,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TMPL-01 | Phase 1 | Complete |
 | TMPL-02 | Phase 1 | Complete |
-| TMPL-03 | Phase 1 | Complete |
-| CONT-01 | Phase 1 | Complete |
-| CONT-02 | Phase 1 | Complete |
-| GIT-01 | Phase 1 | Complete |
-| GIT-02 | Phase 1 | Complete |
+| TMPL-03 | Phase 6 | Pending |
+| CONT-01 | Phase 5 | Pending |
+| CONT-02 | Phase 5 | Pending |
+| GIT-01 | Phase 4 | Pending |
+| GIT-02 | Phase 4 | Pending |
 | EXEC-01 | Phase 2 | Complete |
 | EXEC-02 | Phase 2 | Complete |
 | EXEC-03 | Phase 2 | Complete |
@@ -83,7 +83,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WKFL-02 | Phase 2 | Complete |
 | WKFL-03 | Phase 3 | Complete |
 | WKFL-04 | Phase 3 | Complete |
-| WKFL-05 | Phase 3 | Complete |
+| WKFL-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
@@ -92,4 +92,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-04*
-*Last updated: 2026-03-04 after roadmap creation*
+*Last updated: 2026-03-05 after gap closure phase creation*

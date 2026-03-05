@@ -68,6 +68,39 @@ Plans:
 - [x] 03-02-PLAN.md — DAG-based concurrent runner replacing sequential runner
 - [x] 03-03-PLAN.md — CLI resume command and end-to-end verification
 
+### Phase 4: Wire Git Worktree Isolation
+**Goal**: Git worktree and branch tracking modules are wired into the execution pipeline so each task runs in its own worktree on a unique branch
+**Depends on**: Phase 1, Phase 2
+**Requirements**: GIT-01, GIT-02
+**Gap Closure:** Closes gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. `cli/run.ts` creates a worktree before passing the repo path to the executor, and cleans it up after
+  2. `BranchTracker` is instantiated and updated during task execution
+  3. Two concurrent tasks get separate worktrees and do not share filesystem state
+**Plans**: 0 plans
+
+### Phase 5: Wire Container Isolation
+**Goal**: ContainerManager is integrated into the execution pipeline so every task executes inside a Docker container with restricted network and filesystem access
+**Depends on**: Phase 4
+**Requirements**: CONT-01, CONT-02
+**Gap Closure:** Closes gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. `TaskExecutor` creates a Docker container via `ContainerManager` and runs the agent inside it
+  2. Containers are created with `NetworkMode: none` and `ReadonlyRootfs: true` enforced at runtime
+  3. Containers are cleaned up on both normal exit and crash (no zombie containers)
+**Plans**: 0 plans
+
+### Phase 6: Wire State Persistence & CLI Dry-Run
+**Goal**: Workflow state is persisted during runs (enabling resume) and dry-run template rendering is exposed via the CLI
+**Depends on**: Phase 2, Phase 3
+**Requirements**: WKFL-05, TMPL-03
+**Gap Closure:** Closes gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. `cli/run.ts` passes a `stateManager` to `runWorkflow()` so state is saved during execution
+  2. `agent-harness resume <run-id>` successfully resumes a killed workflow from the last completed node
+  3. `agent-harness dry-run <template> --vars '...'` renders and prints the final prompt without executing
+**Plans**: 0 plans
+
 ## Progress
 
 **Execution Order:**
@@ -78,3 +111,6 @@ Phases execute in numeric order: 1 → 2 → 3
 | 1. Foundation | 3/4 | In Progress|  |
 | 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
 | 3. Concurrent Workflow Engine | 3/3 | Complete   | 2026-03-05 |
+| 4. Wire Git Worktree Isolation | 0/0 | Pending    |  |
+| 5. Wire Container Isolation | 0/0 | Pending    |  |
+| 6. Wire State Persistence & CLI Dry-Run | 0/0 | Pending    |  |
