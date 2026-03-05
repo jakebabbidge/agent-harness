@@ -121,7 +121,11 @@ Plans:
   1. When an agent running inside a container asks a question, a `question.json` is produced and the question is surfaced at the CLI
   2. The CLI operator provides an answer via `agent-harness answer <run-id> "<answer>"` and the agent resumes execution inside the container
   3. The HITL loop works end-to-end through the container boundary using file-based IPC on mounted volumes
-**Plans**: 0 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Agent-runner script, Dockerfile updates, ContainerManager Cmd change, and host-side question polling
+- [ ] 07-02-PLAN.md — Answer CLI adaptation for worktree-based IPC and end-to-end HITL wiring
 
 ## Progress
 
@@ -136,4 +140,4 @@ Phases execute in numeric order: 1 → 2 → 3
 | 4. Wire Git Worktree Isolation | 0/2 | In Progress|  |
 | 5. Wire Container Isolation | 0/2 | Pending    |  |
 | 6. Wire State Persistence & CLI Dry-Run | 0/1 | Pending    |  |
-| 7. Restore HITL for Container Model | 0/0 | Pending    |  |
+| 7. Restore HITL for Container Model | 0/2 | Pending    |  |
