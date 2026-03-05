@@ -4,6 +4,8 @@ import { TaskExecutor } from '../executor/executor.js';
 import { topologicalTiers } from './dag.js';
 import { evaluateCondition } from './condition.js';
 import { createStateManager } from './state.js';
+import { createWorktree, removeWorktree } from '../git/worktree.js';
+import type { BranchTracker } from '../git/tracker.js';
 import type {
   WorkflowDef,
   TaskResult,
@@ -28,6 +30,8 @@ export interface RunWorkflowOptions {
   state?: WorkflowRunState;
   workflowPath?: string;
   stateManager?: ReturnType<typeof createStateManager>;
+  tracker?: BranchTracker;    // branch tracking across nodes
+  baseBranch?: string;        // branch to base worktrees on (default: "main")
 }
 
 /**
@@ -116,6 +120,8 @@ export async function runWorkflow(
   const runId = options?.runId ?? uuidv4();
   const workflowPath = options?.workflowPath ?? '';
   const sm = options?.stateManager;
+  const tracker = options?.tracker;
+  const baseBranch = options?.baseBranch ?? 'main';
   const saveMutex = createMutex();
 
   // Initialize or restore state
@@ -211,9 +217,20 @@ export async function runWorkflow(
       nodeStates[nodeId] = { status: 'running', startedAt };
       await saveState('running');
 
+      // Worktree lifecycle: create isolated worktree per node
+      const worktreeTaskId = `${runId.slice(0, 8)}-${nodeId}`;
+      let executionRepo = node.repo;
+      let worktreeCreated = false;
+
+      if (node.repo) {
+        const worktreeInfo = await createWorktree(node.repo, worktreeTaskId, baseBranch, tracker);
+        executionRepo = worktreeInfo.worktreePath;
+        worktreeCreated = true;
+      }
+
       try {
         const rendered = await renderTemplate(node.template, node.variables ?? {}, []);
-        const result = await executor.executeTask(rendered.rendered, node.repo, uuidv4());
+        const result = await executor.executeTask(rendered.rendered, executionRepo, uuidv4());
 
         nodeOutputs.set(nodeId, parseNodeOutput(result.resultText));
 
@@ -245,6 +262,14 @@ export async function runWorkflow(
         };
         await saveState('running');
         throw err;
+      } finally {
+        if (worktreeCreated) {
+          try {
+            await removeWorktree(node.repo, worktreeTaskId, tracker);
+          } catch (cleanupErr) {
+            console.warn(`[workflow] Failed to clean up worktree for node '${nodeId}': ${cleanupErr}`);
+          }
+        }
       }
     });
 
