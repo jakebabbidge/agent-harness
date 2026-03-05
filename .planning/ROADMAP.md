@@ -77,7 +77,11 @@ Plans:
   1. `cli/run.ts` creates a worktree before passing the repo path to the executor, and cleans it up after
   2. `BranchTracker` is instantiated and updated during task execution
   3. Two concurrent tasks get separate worktrees and do not share filesystem state
-**Plans**: 0 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Wire worktree lifecycle and BranchTracker into workflow runner with integration tests
+- [ ] 04-02-PLAN.md — Wire BranchTracker and worktree creation into CLI entry points (run + resume)
 
 ### Phase 5: Wire Container Isolation
 **Goal**: ContainerManager is integrated into the execution pipeline so every task executes inside a Docker container with restricted network and filesystem access
@@ -111,6 +115,6 @@ Phases execute in numeric order: 1 → 2 → 3
 | 1. Foundation | 3/4 | In Progress|  |
 | 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
 | 3. Concurrent Workflow Engine | 3/3 | Complete   | 2026-03-05 |
-| 4. Wire Git Worktree Isolation | 0/0 | Pending    |  |
+| 4. Wire Git Worktree Isolation | 0/2 | In Progress|  |
 | 5. Wire Container Isolation | 0/0 | Pending    |  |
 | 6. Wire State Persistence & CLI Dry-Run | 0/0 | Pending    |  |
