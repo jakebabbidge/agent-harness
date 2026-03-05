@@ -107,7 +107,10 @@ Plans:
   1. `cli/run.ts` passes a `stateManager` to `runWorkflow()` so state is saved during execution
   2. `agent-harness resume <run-id>` successfully resumes a killed workflow from the last completed node
   3. `agent-harness dry-run <template> --vars '...'` renders and prints the final prompt without executing
-**Plans**: 0 plans
+**Plans**: 1 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Wire stateManager into run/resume CLI and add dry-run command
 
 ## Progress
 
@@ -121,4 +124,4 @@ Phases execute in numeric order: 1 → 2 → 3
 | 3. Concurrent Workflow Engine | 3/3 | Complete   | 2026-03-05 |
 | 4. Wire Git Worktree Isolation | 0/2 | In Progress|  |
 | 5. Wire Container Isolation | 0/2 | Pending    |  |
-| 6. Wire State Persistence & CLI Dry-Run | 0/0 | Pending    |  |
+| 6. Wire State Persistence & CLI Dry-Run | 0/1 | Pending    |  |
