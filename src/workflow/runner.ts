@@ -6,6 +6,7 @@ import { evaluateCondition } from './condition.js';
 import { createStateManager } from './state.js';
 import { createWorktree, removeWorktree } from '../git/worktree.js';
 import type { BranchTracker } from '../git/tracker.js';
+import type { ContainerManager } from '../container/manager.js';
 import type {
   WorkflowDef,
   TaskResult,
@@ -32,6 +33,7 @@ export interface RunWorkflowOptions {
   stateManager?: ReturnType<typeof createStateManager>;
   tracker?: BranchTracker;    // branch tracking across nodes
   baseBranch?: string;        // branch to base worktrees on (default: "main")
+  containerManager?: ContainerManager;  // container lifecycle manager (passed to TaskExecutor at construction)
 }
 
 /**
