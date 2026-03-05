@@ -19,13 +19,13 @@
 ### Task Execution
 
 - [ ] **EXEC-01**: User can run a prompt template against a repository with `agent-harness run <template> <repo>`
-- [ ] **EXEC-02**: When the agent asks a question mid-task, execution pauses and the question is surfaced to the CLI operator
-- [ ] **EXEC-03**: CLI operator can answer a surfaced question; the agent resumes with the answer
+- [x] **EXEC-02**: When the agent asks a question mid-task, execution pauses and the question is surfaced to the CLI operator
+- [x] **EXEC-03**: CLI operator can answer a surfaced question; the agent resumes with the answer
 - [ ] **EXEC-04**: Agent writes structured output to a designated markdown memory bank file; harness reads this as task output
 
 ### Workflow Engine
 
-- [ ] **WKFL-01**: User can define a workflow as a YAML file with nodes (prompt executions) and edges (execution order)
+- [x] **WKFL-01**: User can define a workflow as a YAML file with nodes (prompt executions) and edges (execution order)
 - [ ] **WKFL-02**: Workflow engine executes nodes sequentially in a defined linear chain
 - [ ] **WKFL-03**: Workflow engine executes independent nodes in parallel (fan-out concurrent execution)
 - [ ] **WKFL-04**: Workflow edges can define conditions based on node output to route to different next nodes
@@ -76,10 +76,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GIT-01 | Phase 1 | Complete |
 | GIT-02 | Phase 1 | Complete |
 | EXEC-01 | Phase 2 | Pending |
-| EXEC-02 | Phase 2 | Pending |
-| EXEC-03 | Phase 2 | Pending |
+| EXEC-02 | Phase 2 | Complete |
+| EXEC-03 | Phase 2 | Complete |
 | EXEC-04 | Phase 2 | Pending |
-| WKFL-01 | Phase 2 | Pending |
+| WKFL-01 | Phase 2 | Complete |
 | WKFL-02 | Phase 2 | Pending |
 | WKFL-03 | Phase 3 | Pending |
 | WKFL-04 | Phase 3 | Pending |

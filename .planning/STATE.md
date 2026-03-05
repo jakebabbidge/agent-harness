@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-04-PLAN.md — ContainerManager with SIGKILL-safe AutoRemove, network isolation, 8 tests green, manual checkpoint verified
-last_updated: "2026-03-04T12:53:46.026Z"
+stopped_at: Completed 02-01-PLAN.md — QuestionStore file-based IPC, YAML workflow parser with zod, 17 tests green
+last_updated: "2026-03-05T01:57:37.297Z"
 last_activity: "2026-03-04 — 01-02 complete: Handlebars template engine, async loader, dryRunRender, 16 tests green"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
   percent: 100
 ---
 
@@ -51,6 +51,7 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 | Phase 01-foundation P04 | 25 | 2 tasks | 3 files |
+| Phase 02-single-task-execution P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: AutoRemove=true means harness must NOT call container.remove() after stop() — Docker daemon owns container cleanup on SIGKILL
 - [Phase 01-foundation]: NetworkMode=none blocks DNS resolution entirely, not just TCP — wget: bad address confirms no outbound traffic possible
 - [Phase 01-foundation]: Constructor injection for Dockerode instance — ContainerManager takes docker client in constructor, createContainerManager() factory wraps default
+- [Phase 02-single-task-execution]: 500ms polling interval for askAndWait — balances responsiveness vs CPU overhead for interactive HITL
+- [Phase 02-single-task-execution]: answer.json consumed (deleted) immediately after read — prevents stale answer pickup; purgeRunDir available for full cleanup
+- [Phase 02-single-task-execution]: WorkflowDef dual-export: zod-inferred type in parser.ts as runtime source of truth; manual interface in types/index.ts for cross-module sharing
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T12:49:34.640Z
-Stopped at: Completed 01-04-PLAN.md — ContainerManager with SIGKILL-safe AutoRemove, network isolation, 8 tests green, manual checkpoint verified
+Last session: 2026-03-05T01:57:37.295Z
+Stopped at: Completed 02-01-PLAN.md — QuestionStore file-based IPC, YAML workflow parser with zod, 17 tests green
 Resume file: None
