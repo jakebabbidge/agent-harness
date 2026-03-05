@@ -85,7 +85,7 @@ describe('WorkflowRunner', () => {
 
     const [calledPrompt] = mock.executeTask.mock.calls[0] as [string, ...unknown[]];
     expect(calledPrompt).toBe('rendered-prompt-for-templates/task.hbs');
-    expect(mockRenderTemplate).toHaveBeenCalledWith('templates/task.hbs', {});
+    expect(mockRenderTemplate).toHaveBeenCalledWith('templates/task.hbs', {}, []);
   });
 
   it('first node failure stops execution — second node is NOT called', async () => {

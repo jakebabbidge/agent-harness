@@ -33,7 +33,7 @@ export async function runWorkflow(
     const runId = uuidv4();
 
     // Render the template with node variables
-    const rendered = await renderTemplate(node.template, node.variables ?? {});
+    const rendered = await renderTemplate(node.template, node.variables ?? {}, []);
 
     // Execute the task
     const result = await executor.executeTask(rendered.rendered, node.repo, runId);
