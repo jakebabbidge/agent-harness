@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-05T07:57:05Z"
-last_activity: "2026-03-05 — 07-01 complete: Agent-runner and host-side question polling"
+status: completed
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-05T08:02:01.962Z"
+last_activity: "2026-03-05 — 07-02 complete: Answer CLI and QuestionStore worktree adaptation"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 7 of 7 (Restore HITL for Container Model)
-Plan: 1 of 2 complete in current phase (07-01 complete)
-Status: In Progress
-Last activity: 2026-03-05 — 07-01 complete: Agent-runner and host-side question polling
+Plan: 2 of 2 complete in current phase (07-02 complete)
+Status: Complete
+Last activity: 2026-03-05 — 07-02 complete: Answer CLI and QuestionStore worktree adaptation
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [█████████░] 94%
 | Phase 05 P02 | 2min | 3 tasks | 6 files |
 | Phase 06 P01 | 145s | 2 tasks | 6 files |
 | Phase 07 P01 | 207s | 2 tasks | 7 files |
+| Phase 07 P02 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,9 @@ Recent decisions affecting current work:
 - [Phase 07-01]: HARNESS_IPC_DIR env var controls IPC path -- enables nodeId-scoped subdirectories for future multi-node concurrent HITL
 - [Phase 07-01]: Host-side polling uses 500ms interval with containerDone flag -- same proven interval from Phase 2
 - [Phase 07-01]: Stale IPC file cleanup before container creation -- prevents stale question pickup from previous runs
+- [Phase 07]: QuestionStore flat mode via constructor boolean -- forWorktree sets flat=true so runDir ignores runId and returns baseDir directly
+- [Phase 07]: answerCommand throws instead of process.exit when --path provided -- enables testability
+- [Phase 07]: Executor answer hint includes --path worktreePath for direct copy-paste by operator
 
 ### Pending Todos
 
@@ -129,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T07:57:05Z
-Stopped at: Completed 07-01-PLAN.md
-Resume file: .planning/phases/07-restore-hitl-for-container-model/07-01-SUMMARY.md
+Last session: 2026-03-05T08:02:01.959Z
+Stopped at: Completed 07-02-PLAN.md
+Resume file: None
