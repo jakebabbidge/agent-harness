@@ -9,7 +9,7 @@
 
 - [x] **TMPL-01**: User can define a prompt template as a file with `{{variable}}` substitution syntax
 - [x] **TMPL-02**: User can compose a prompt from multiple partial template files (section composition)
-- [ ] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
+- [x] **TMPL-03**: User can dry-run render a template with given variables to inspect the final prompt before execution
 
 ### Container Isolation
 
@@ -29,7 +29,7 @@
 - [x] **WKFL-02**: Workflow engine executes nodes sequentially in a defined linear chain
 - [x] **WKFL-03**: Workflow engine executes independent nodes in parallel (fan-out concurrent execution)
 - [x] **WKFL-04**: Workflow edges can define conditions based on node output to route to different next nodes
-- [ ] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
+- [x] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
 
 ### Git Integration
 
@@ -70,7 +70,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TMPL-01 | Phase 1 | Complete |
 | TMPL-02 | Phase 1 | Complete |
-| TMPL-03 | Phase 6 | Pending |
+| TMPL-03 | Phase 6 | Complete |
 | CONT-01 | Phase 5 | Complete |
 | CONT-02 | Phase 5 | Complete |
 | GIT-01 | Phase 4 | Complete |
@@ -83,7 +83,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WKFL-02 | Phase 2 | Complete |
 | WKFL-03 | Phase 3 | Complete |
 | WKFL-04 | Phase 3 | Complete |
-| WKFL-05 | Phase 6 | Pending |
+| WKFL-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 16 total
