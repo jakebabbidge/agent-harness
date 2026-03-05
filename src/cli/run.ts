@@ -24,11 +24,17 @@ export async function runCommand(
     if (isWorkflow) {
       // Workflow mode
       const workflow = await parseWorkflow(target);
-      const result = await runWorkflow(workflow, executor);
+      const runId = uuidv4();
+      console.log(`[agent-harness] Workflow run ID: ${runId}`);
+
+      const result = await runWorkflow(workflow, executor, {
+        runId,
+        workflowPath: target,
+      });
 
       if (result.status === "failed") {
         console.error(
-          `[agent-harness] Workflow failed at node '${result.failedNodeId ?? "unknown"}'.`,
+          `[agent-harness] Workflow failed at node '${result.failedNodeId ?? "unknown"}'. Run ID: ${runId}`,
         );
         process.exit(1);
       } else {

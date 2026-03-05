@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { runCommand } from './run.js';
 import { answerCommand } from './answer.js';
+import { resumeCommand } from './resume.js';
 
 export const program = new Command();
 
@@ -26,6 +27,14 @@ program
   .argument('<answer>', 'Answer text')
   .action(async (runId: string, answer: string) => {
     await answerCommand(runId, answer);
+  });
+
+program
+  .command('resume')
+  .description('Resume an interrupted workflow')
+  .argument('<run-id>', 'Run ID of the interrupted workflow')
+  .action(async (runId: string) => {
+    await resumeCommand(runId);
   });
 
 program.parse(process.argv);
