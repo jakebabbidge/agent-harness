@@ -26,8 +26,9 @@ program
   .description('Answer a pending agent question')
   .argument('<run-id>', 'Run ID from the question prompt')
   .argument('<answer>', 'Answer text')
-  .action(async (runId: string, answer: string) => {
-    await answerCommand(runId, answer);
+  .option('--path <worktree-path>', 'Path to worktree for container HITL')
+  .action(async (runId: string, answer: string, opts: { path?: string }) => {
+    await answerCommand(runId, answer, opts);
   });
 
 program

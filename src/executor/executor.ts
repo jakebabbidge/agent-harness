@@ -65,7 +65,7 @@ export class TaskExecutor {
             console.log(`\n[agent-harness] Agent question: ${item.question}`);
           }
           console.log(
-            `[agent-harness] Answer with: agent-harness answer ${runId} "<your answer>"`,
+            `[agent-harness] Answer with: agent-harness answer ${runId} --path ${worktreePath} "<your answer>"`,
           );
           // Wait for question.json to be consumed (deleted by agent-runner after answer)
           while (!containerDone) {
