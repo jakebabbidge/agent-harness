@@ -37,7 +37,7 @@ Plans:
 - [ ] 01-04-PLAN.md — Docker container lifecycle manager with isolation and SIGKILL-safe cleanup (CONT-01, CONT-02)
 
 ### Phase 2: Single-Task Execution
-**Goal**: A single workflow node executes Claude Code in a container, the agent can ask a question mid-task that pauses execution and is answered by the CLI operator, and the run produces structured output persisted to disk
+**Goal**: A single workflow node executes Claude Code via the Agent SDK on the host, the agent can ask a question mid-task that pauses execution and is answered by the CLI operator via file-based IPC, and the run produces structured output persisted to disk
 **Depends on**: Phase 1
 **Requirements**: EXEC-01, EXEC-02, EXEC-03, EXEC-04, WKFL-01, WKFL-02
 **Success Criteria** (what must be TRUE):
@@ -46,7 +46,12 @@ Plans:
   3. When the agent asks a question during a run, execution pauses and the question is displayed at the CLI — the run does not crash or time out
   4. The CLI operator provides an answer via `agent-harness answer <run-id> "<answer>"` and the agent resumes execution
   5. Agent output is written to a designated markdown file and the harness reads it as the structured task result; the run exits with a correct exit code
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Shared types, HITL QuestionStore (file-based IPC), and YAML workflow parser
+- [ ] 02-02-PLAN.md — Task Executor (Claude Agent SDK wrapper) and sequential Workflow Runner
+- [ ] 02-03-PLAN.md — CLI wiring (run + answer commands) and end-to-end verification
 
 ### Phase 3: Concurrent Workflow Engine
 **Goal**: Multiple workflow nodes run in parallel across isolated containers with their own git worktrees, workflow edges can route conditionally based on node output, and an interrupted workflow can be resumed from its last completed node
@@ -66,5 +71,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/4 | In Progress|  |
-| 2. Single-Task Execution | 0/TBD | Not started | - |
+| 2. Single-Task Execution | 0/3 | Not started | - |
 | 3. Concurrent Workflow Engine | 0/TBD | Not started | - |
