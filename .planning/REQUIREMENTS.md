@@ -13,8 +13,8 @@
 
 ### Container Isolation
 
-- [ ] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
-- [ ] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
+- [x] **CONT-01**: Each task execution spawns a dedicated Docker container with the target repository mounted
+- [x] **CONT-02**: Container network and filesystem access is restricted to only permitted resources (no unrestricted internet/filesystem)
 
 ### Task Execution
 
@@ -71,8 +71,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-01 | Phase 1 | Complete |
 | TMPL-02 | Phase 1 | Complete |
 | TMPL-03 | Phase 6 | Pending |
-| CONT-01 | Phase 5 | Pending |
-| CONT-02 | Phase 5 | Pending |
+| CONT-01 | Phase 5 | Complete |
+| CONT-02 | Phase 5 | Complete |
 | GIT-01 | Phase 4 | Complete |
 | GIT-02 | Phase 4 | Complete |
 | EXEC-01 | Phase 2 | Complete |

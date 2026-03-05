@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-05T06:08:00.505Z"
-last_activity: "2026-03-05 — 04-01 complete: Wire worktree lifecycle into workflow runner"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-05T06:26:44.696Z"
+last_activity: "2026-03-05 — 05-01 complete: Container image and manager rework for devcontainer model"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
-  percent: 92
+  total_plans: 14
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Multiple concurrent coding agent tasks run in full isolation against a codebase, coordinated by a declarative workflow graph, with human oversight surfaced at the CLI when agents need input.
-**Current focus:** Phase 4 — Wire Git Worktree Isolation
+**Current focus:** Phase 5 — Wire Container Isolation
 
 ## Current Position
 
-Phase: 4 of 6 (Wire Git Worktree Isolation)
-Plan: 1 of 2 in current phase (04-01 complete)
+Phase: 5 of 6 (Wire Container Isolation)
+Plan: 1 of 1 complete in current phase (05-01 complete)
 Status: In Progress
-Last activity: 2026-03-05 — 04-01 complete: Wire worktree lifecycle into workflow runner
+Last activity: 2026-03-05 — 05-01 complete: Container image and manager rework for devcontainer model
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [█████████░] 92%
 | Phase 03 P03 | 2min | 2 tasks | 3 files |
 | Phase 04 P01 | 2min | 2 tasks | 2 files |
 | Phase 04 P02 | 2min | 2 tasks | 2 files |
+| Phase 05 P01 | 3min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Backward compatible: nodes without repo skip worktree lifecycle entirely
 - [Phase 04]: Shared runId and BranchTracker created at CLI level before mode dispatch -- consistent tracker lifecycle for both workflow and template paths
 - [Phase 04]: Resume path loads persisted tracker state and cleans stale worktrees (status=running) before re-executing -- prevents branch-already-exists errors
+- [Phase 05]: docker CLI build over dockerode.buildImage() -- simpler COPY/context handling
+- [Phase 05]: Bridge networking + iptables firewall replaces NetworkMode:none -- allows whitelisted outbound traffic
+- [Phase 05]: Container Cmd chains sudo init-firewall.sh then Claude CLI -- single process lifecycle with waitForExit()
 
 ### Pending Todos
 
@@ -115,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T06:08:00.497Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-wire-container-isolation/05-CONTEXT.md
+Last session: 2026-03-05T06:26:44.694Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
