@@ -44,3 +44,63 @@ export interface RenderResult {
   partialPaths: string[];
   variables: TemplateVariables;
 }
+
+// --- Phase 2 types ---
+
+/** A single question in a HITL question record. */
+export interface QuestionItem {
+  question: string;
+  header?: string;
+  options?: Array<{ label: string; description?: string }>;
+  multiSelect?: boolean;
+}
+
+/** A record written to question.json for HITL file-based IPC. */
+export interface QuestionRecord {
+  runId: string;
+  questions: QuestionItem[];
+  timestamp: string;
+}
+
+/** A record written to answer.json after human submits answers. */
+export interface AnswerRecord {
+  runId: string;
+  answers: Record<string, string>;
+  answeredAt: string;
+}
+
+/** Definition of a single node in a workflow. */
+export interface NodeDef {
+  id: string;
+  template: string;
+  repo: string;
+  variables?: Record<string, unknown>;
+}
+
+/** An edge connecting two nodes in a workflow. */
+export interface EdgeDef {
+  from: string;
+  to: string;
+}
+
+/** A complete workflow definition parsed from YAML. */
+export interface WorkflowDef {
+  version: string;
+  nodes: NodeDef[];
+  edges: EdgeDef[];
+}
+
+/** The result returned by a completed task execution. */
+export interface TaskResult {
+  exitCode: number;
+  resultText: string;
+}
+
+/** Runtime state of a workflow run. */
+export interface RunState {
+  runId: string;
+  workflowPath?: string;
+  status: 'running' | 'completed' | 'failed' | 'waiting_for_answer';
+  startedAt: string;
+  completedAt?: string;
+}
