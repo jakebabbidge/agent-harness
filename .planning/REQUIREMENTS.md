@@ -33,8 +33,8 @@
 
 ### Git Integration
 
-- [ ] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
-- [ ] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
+- [x] **GIT-01**: Each concurrent task gets its own git worktree so tasks do not share filesystem state
+- [x] **GIT-02**: Harness tracks which git branch each in-flight task is operating on
 
 ## v2 Requirements
 
@@ -73,8 +73,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-03 | Phase 6 | Pending |
 | CONT-01 | Phase 5 | Pending |
 | CONT-02 | Phase 5 | Pending |
-| GIT-01 | Phase 4 | Pending |
-| GIT-02 | Phase 4 | Pending |
+| GIT-01 | Phase 4 | Complete |
+| GIT-02 | Phase 4 | Complete |
 | EXEC-01 | Phase 2 | Complete |
 | EXEC-02 | Phase 2 | Complete |
 | EXEC-03 | Phase 2 | Complete |

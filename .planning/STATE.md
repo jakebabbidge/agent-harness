@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-05T05:07:14.191Z"
-last_activity: "2026-03-05 — 03-03 complete: CLI resume command and end-to-end verification"
+status: in-progress
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-05T05:32:42Z"
+last_activity: "2026-03-05 — 04-01 complete: Wire worktree lifecycle into workflow runner"
 progress:
-  total_phases: 3
+  total_phases: 6
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Multiple concurrent coding agent tasks run in full isolation against a codebase, coordinated by a declarative workflow graph, with human oversight surfaced at the CLI when agents need input.
-**Current focus:** Phase 3 — Concurrent Workflow Engine
+**Current focus:** Phase 4 — Wire Git Worktree Isolation
 
 ## Current Position
 
-Phase: 3 of 3 (Concurrent Workflow Engine)
-Plan: 3 of 3 in current phase (03-03 complete)
-Status: Complete
-Last activity: 2026-03-05 — 03-03 complete: CLI resume command and end-to-end verification
+Phase: 4 of 6 (Wire Git Worktree Isolation)
+Plan: 1 of 2 in current phase (04-01 complete)
+Status: In Progress
+Last activity: 2026-03-05 — 04-01 complete: Wire worktree lifecycle into workflow runner
 
-Progress: [██████████] 100%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 03-concurrent-workflow-engine P01 | 2min | 3 tasks | 9 files |
 | Phase 03 P02 | 4min | 1 tasks | 2 files |
 | Phase 03 P03 | 2min | 2 tasks | 3 files |
+| Phase 04 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Async mutex for serializing concurrent state file writes -- prevents race on shared tmp path
 - [Phase 03-03]: Resume loads workflowDef from persisted state rather than re-parsing YAML -- avoids requiring workflow file at resume time
 - [Phase 03-03]: Run command logs runId at start so user can copy it for resume if process is killed
+- [Phase 04-01]: worktreeTaskId = runId.slice(0,8)-nodeId for cross-run and cross-node uniqueness
+- [Phase 04-01]: Worktree creation outside try/catch, cleanup in finally -- ensures cleanup even on executor throw
+- [Phase 04-01]: Backward compatible: nodes without repo skip worktree lifecycle entirely
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T05:03:00.000Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-03-05T05:32:42Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
