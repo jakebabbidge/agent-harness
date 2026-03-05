@@ -3,7 +3,8 @@ import * as path from 'path';
 import { loadRunState } from '../workflow/state.js';
 import { runWorkflow } from '../workflow/runner.js';
 import { TaskExecutor } from '../executor/executor.js';
-import { QuestionStore } from '../hitl/question-store.js';
+import { createContainerManager } from '../container/manager.js';
+import { ensureImage } from '../container/image.js';
 import { BranchTracker } from '../git/tracker.js';
 import { removeWorktree } from '../git/worktree.js';
 
@@ -29,6 +30,14 @@ export async function resumeCommand(runId: string): Promise<void> {
     `[agent-harness] Resuming workflow run ${runId} (${completedNodes}/${totalNodes} nodes already completed)`,
   );
 
+  // Create ContainerManager and reclaim orphans from previous crashed runs
+  const containerManager = createContainerManager();
+  console.log('[agent-harness] Reclaiming orphaned containers...');
+  await containerManager.reclaimOrphans();
+
+  // Ensure the Docker image is built before any task execution
+  await ensureImage(containerManager.docker);
+
   // Create and load BranchTracker with same path convention as run.ts
   const trackerStatePath = path.join(
     os.tmpdir(), 'agent-harness', 'branches', `${runId}.json`
@@ -50,8 +59,7 @@ export async function resumeCommand(runId: string): Promise<void> {
     }
   }
 
-  const questionStore = new QuestionStore();
-  const executor = new TaskExecutor(questionStore);
+  const executor = new TaskExecutor(containerManager);
 
   try {
     const result = await runWorkflow(state.workflowDef, executor, {

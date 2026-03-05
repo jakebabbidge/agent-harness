@@ -3,7 +3,8 @@ import * as os from "os";
 import * as path from "path";
 import * as fs from "fs/promises";
 import { TaskExecutor } from "../executor/executor.js";
-import { QuestionStore } from "../hitl/question-store.js";
+import { createContainerManager } from "../container/manager.js";
+import { ensureImage } from "../container/image.js";
 import { parseWorkflow } from "../workflow/parser.js";
 import { runWorkflow } from "../workflow/runner.js";
 import { renderTemplate } from "../template/renderer.js";
@@ -14,14 +15,15 @@ export async function runCommand(
   target: string,
   options: { repo?: string; variables?: string },
 ): Promise<void> {
-  // Check for API key before creating executor
-  /*if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[agent-harness] Error: ANTHROPIC_API_KEY environment variable is not set.');
-    process.exit(1);
-  }*/
+  // Create ContainerManager and reclaim orphans from any previous crashed runs
+  const containerManager = createContainerManager();
+  console.log('[agent-harness] Reclaiming orphaned containers...');
+  await containerManager.reclaimOrphans();
 
-  const questionStore = new QuestionStore();
-  const executor = new TaskExecutor(questionStore);
+  // Ensure the Docker image is built before any task execution
+  await ensureImage(containerManager.docker);
+
+  const executor = new TaskExecutor(containerManager);
 
   const isWorkflow = target.endsWith(".yaml") || target.endsWith(".yml");
 

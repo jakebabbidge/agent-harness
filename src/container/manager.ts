@@ -16,7 +16,8 @@ import type { TaskId, ContainerInfo } from '../types/index.js';
  */
 export class ContainerManager {
   readonly registry: ContainerRegistry;
-  private readonly docker: Dockerode;
+  /** @internal exposed for ensureImage() and other infra that needs the Docker client */
+  readonly docker: Dockerode;
 
   constructor(docker: Dockerode, registry?: ContainerRegistry) {
     this.docker = docker;
