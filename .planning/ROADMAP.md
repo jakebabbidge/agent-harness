@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Container infrastructure, git worktree isolation, prompt template engine, and IPC protocol — everything downstream phases depend on
 - [x] **Phase 2: Single-Task Execution** - End-to-end: run one workflow node with a prompt against a repo, capture structured output, surface agent questions to the CLI operator, and resume on answer (completed 2026-03-05)
-- [ ] **Phase 3: Concurrent Workflow Engine** - Fan-out parallel execution across isolated containers, conditional routing, and workflow resume after crash
+- [x] **Phase 3: Concurrent Workflow Engine** - Fan-out parallel execution across isolated containers, conditional routing, and workflow resume after crash (completed 2026-03-05)
 
 ## Phase Details
 
@@ -64,9 +64,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Foundation modules: types, DAG scheduler, condition evaluator, state persistence
-- [ ] 03-02-PLAN.md — DAG-based concurrent runner replacing sequential runner
-- [ ] 03-03-PLAN.md — CLI resume command and end-to-end verification
+- [x] 03-01-PLAN.md — Foundation modules: types, DAG scheduler, condition evaluator, state persistence
+- [x] 03-02-PLAN.md — DAG-based concurrent runner replacing sequential runner
+- [x] 03-03-PLAN.md — CLI resume command and end-to-end verification
 
 ## Progress
 
@@ -77,4 +77,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/4 | In Progress|  |
 | 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
-| 3. Concurrent Workflow Engine | 0/3 | Not started | - |
+| 3. Concurrent Workflow Engine | 3/3 | Complete   | 2026-03-05 |
