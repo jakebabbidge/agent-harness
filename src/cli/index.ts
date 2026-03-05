@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { runCommand } from './run.js';
 import { answerCommand } from './answer.js';
 import { resumeCommand } from './resume.js';
+import { dryRunCommand } from './dry-run.js';
 
 export const program = new Command();
 
@@ -35,6 +36,16 @@ program
   .argument('<run-id>', 'Run ID of the interrupted workflow')
   .action(async (runId: string) => {
     await resumeCommand(runId);
+  });
+
+program
+  .command('dry-run')
+  .description('Render a template with variables and print the result (no execution)')
+  .argument('<template>', 'Template file path')
+  .option('-v, --variables <json>', 'JSON variables for template', '{}')
+  .option('-p, --partials <paths...>', 'Partial template file paths')
+  .action(async (template: string, opts: { variables?: string; partials?: string[] }) => {
+    await dryRunCommand(template, opts);
   });
 
 program.parse(process.argv);
