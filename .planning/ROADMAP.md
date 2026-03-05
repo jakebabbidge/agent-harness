@@ -112,6 +112,17 @@ Plans:
 Plans:
 - [ ] 06-01-PLAN.md — Wire stateManager into run/resume CLI and add dry-run command
 
+### Phase 7: Restore HITL for Container Model
+**Goal**: QuestionStore-based human-in-the-loop is restored for the container execution model so agents can ask questions mid-task and CLI operators can answer them
+**Depends on**: Phase 5
+**Requirements**: EXEC-02, EXEC-03
+**Gap Closure:** Closes gaps from audit (Phase 5 container rewrite regression)
+**Success Criteria** (what must be TRUE):
+  1. When an agent running inside a container asks a question, a `question.json` is produced and the question is surfaced at the CLI
+  2. The CLI operator provides an answer via `agent-harness answer <run-id> "<answer>"` and the agent resumes execution inside the container
+  3. The HITL loop works end-to-end through the container boundary using file-based IPC on mounted volumes
+**Plans**: 0 plans
+
 ## Progress
 
 **Execution Order:**
@@ -125,3 +136,4 @@ Phases execute in numeric order: 1 → 2 → 3
 | 4. Wire Git Worktree Isolation | 0/2 | In Progress|  |
 | 5. Wire Container Isolation | 0/2 | Pending    |  |
 | 6. Wire State Persistence & CLI Dry-Run | 0/1 | Pending    |  |
+| 7. Restore HITL for Container Model | 0/0 | Pending    |  |
