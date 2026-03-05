@@ -1,6 +1,6 @@
 import * as os from 'os';
 import * as path from 'path';
-import { loadRunState } from '../workflow/state.js';
+import { loadRunState, createStateManager, DEFAULT_STATE_DIR } from '../workflow/state.js';
 import { runWorkflow } from '../workflow/runner.js';
 import { TaskExecutor } from '../executor/executor.js';
 import { createContainerManager } from '../container/manager.js';
@@ -62,12 +62,14 @@ export async function resumeCommand(runId: string): Promise<void> {
   const executor = new TaskExecutor(containerManager);
 
   try {
+    const stateManager = createStateManager(DEFAULT_STATE_DIR);
     const result = await runWorkflow(state.workflowDef, executor, {
       runId,
       state,
       workflowPath: state.workflowPath,
       tracker,
       baseBranch: 'main',
+      stateManager,
     });
 
     if (result.status === 'failed') {

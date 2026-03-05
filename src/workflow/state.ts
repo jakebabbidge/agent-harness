@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { WorkflowRunState } from '../types/index.js';
 
-const DEFAULT_STATE_DIR = path.join(os.tmpdir(), 'agent-harness', 'workflows');
+export const DEFAULT_STATE_DIR = path.join(os.tmpdir(), 'agent-harness', 'workflows');
 
 /**
  * Create a state manager scoped to a specific base directory.

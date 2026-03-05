@@ -8,6 +8,7 @@ import { ensureImage } from "../container/image.js";
 import { parseWorkflow } from "../workflow/parser.js";
 import { runWorkflow } from "../workflow/runner.js";
 import { renderTemplate } from "../template/renderer.js";
+import { createStateManager, DEFAULT_STATE_DIR } from "../workflow/state.js";
 import { BranchTracker } from "../git/tracker.js";
 import { createWorktree, removeWorktree } from "../git/worktree.js";
 
@@ -40,11 +41,13 @@ export async function runCommand(
       const workflow = await parseWorkflow(target);
       console.log(`[agent-harness] Workflow run ID: ${runId}`);
 
+      const stateManager = createStateManager(DEFAULT_STATE_DIR);
       const result = await runWorkflow(workflow, executor, {
         runId,
         workflowPath: target,
         tracker,
         baseBranch: "main",
+        stateManager,
       });
 
       if (result.status === "failed") {
