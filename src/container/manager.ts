@@ -35,12 +35,12 @@ export class ContainerManager {
    *   - AutoRemove: true — Docker daemon removes container after process exit
    *   - Binds: worktreePath:/workspace:rw, ~/.claude:/home/node/.claude:ro
    *   - User: node, WorkingDir: /workspace
-   *   - Cmd: firewall init then Claude Code CLI with prompt file
+   *   - Cmd: firewall init then agent-runner.js (SDK-based execution with HITL)
+   *   - Env: ANTHROPIC_API_KEY, HARNESS_IPC_DIR=/workspace/.harness
    */
   async createContainer(
     taskId: TaskId,
     worktreePath: string,
-    promptFilePath: string,
   ): Promise<ContainerInfo> {
     const containerName = `agent-harness-task-${taskId}`;
     const claudeDir = `${os.homedir()}/.claude`;
@@ -53,7 +53,11 @@ export class ContainerManager {
       Cmd: [
         'bash',
         '-c',
-        `sudo /usr/local/bin/init-firewall.sh && claude --dangerously-skip-permissions -p "$(cat /workspace/${promptFilePath})"`,
+        'sudo /usr/local/bin/init-firewall.sh && node /usr/local/lib/agent-runner.js',
+      ],
+      Env: [
+        `ANTHROPIC_API_KEY=${process.env.ANTHROPIC_API_KEY || ''}`,
+        'HARNESS_IPC_DIR=/workspace/.harness',
       ],
       Labels: {
         'agent-harness': 'true',

@@ -119,7 +119,7 @@ describe.skipIf(!hasDocker || !hasImage)('ContainerManager integration', () => {
     const taskId = `test-create-${Date.now()}`;
     const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
+    const info = await manager.createContainer(taskId, worktreePath);
     createdContainerIds.push(info.containerId);
 
     expect(info.taskId).toBe(taskId);
@@ -138,7 +138,7 @@ describe.skipIf(!hasDocker || !hasImage)('ContainerManager integration', () => {
     const taskId = `test-inspect-${Date.now()}`;
     const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
+    const info = await manager.createContainer(taskId, worktreePath);
     createdContainerIds.push(info.containerId);
 
     const container = docker.getContainer(info.containerId);
@@ -165,7 +165,7 @@ describe.skipIf(!hasDocker || !hasImage)('ContainerManager integration', () => {
     const taskId = `test-stop-${Date.now()}`;
     const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
+    const info = await manager.createContainer(taskId, worktreePath);
     const containerId = info.containerId;
     createdContainerIds.push(containerId);
 

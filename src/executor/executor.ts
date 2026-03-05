@@ -37,7 +37,7 @@ export class TaskExecutor {
     const taskId = runId.slice(0, 12);
 
     // 3. Create and start container (container is started by createContainer)
-    await this.containerManager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
+    await this.containerManager.createContainer(taskId, worktreePath);
 
     // 4. Wait for container process to exit
     const { StatusCode } = await this.containerManager.waitForExit(taskId);

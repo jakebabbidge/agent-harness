@@ -41,7 +41,7 @@ describe('TaskExecutor', () => {
     expect(promptContent).toBe('do the thing');
   });
 
-  it('calls createContainer with correct taskId, worktreePath, and prompt file path', async () => {
+  it('calls createContainer with correct taskId and worktreePath (no promptFilePath)', async () => {
     const mock = makeMockContainerManager();
     const executor = new TaskExecutor(mock as never);
     await executor.executeTask('test prompt', tmpDir, 'run-123456789');
@@ -49,7 +49,6 @@ describe('TaskExecutor', () => {
     expect(mock.createContainer).toHaveBeenCalledWith(
       'run-12345678',  // runId.slice(0, 12)
       tmpDir,
-      '.harness/prompt.txt',
     );
   });
 
