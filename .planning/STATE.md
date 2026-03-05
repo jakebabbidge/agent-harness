@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
+stopped_at: Completed 05-02-PLAN.md
 last_updated: "2026-03-05T06:26:44.696Z"
-last_activity: "2026-03-05 — 05-01 complete: Container image and manager rework for devcontainer model"
+last_activity: "2026-03-05 — 05-02 complete: Executor and CLI container wiring"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 5 of 6 (Wire Container Isolation)
-Plan: 1 of 1 complete in current phase (05-01 complete)
+Plan: 2 of 2 complete in current phase (05-02 complete)
 Status: In Progress
-Last activity: 2026-03-05 — 05-01 complete: Container image and manager rework for devcontainer model
+Last activity: 2026-03-05 — 05-02 complete: Executor and CLI container wiring
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [█████████░] 93%
 | Phase 04 P01 | 2min | 2 tasks | 2 files |
 | Phase 04 P02 | 2min | 2 tasks | 2 files |
 | Phase 05 P01 | 3min | 3 tasks | 5 files |
+| Phase 05 P02 | 2min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 05]: docker CLI build over dockerode.buildImage() -- simpler COPY/context handling
 - [Phase 05]: Bridge networking + iptables firewall replaces NetworkMode:none -- allows whitelisted outbound traffic
 - [Phase 05]: Container Cmd chains sudo init-firewall.sh then Claude CLI -- single process lifecycle with waitForExit()
+- [Phase 05-02]: runId.slice(0,12) as container taskId -- fits Docker name constraints
+- [Phase 05-02]: ContainerManager.docker exposed readonly for ensureImage access -- avoids duplicate Dockerode instances
+- [Phase 05-02]: HITL/QuestionStore removed from executor -- not wired for container model, future design concern
 
 ### Pending Todos
 
@@ -120,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-05T06:26:44.694Z
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
