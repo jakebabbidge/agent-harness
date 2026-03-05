@@ -19,7 +19,7 @@
 ### Task Execution
 
 - [x] **EXEC-01**: User can run a prompt template against a repository with `agent-harness run <template> <repo>`
-- [ ] **EXEC-02**: When the agent asks a question mid-task, execution pauses and the question is surfaced to the CLI operator
+- [x] **EXEC-02**: When the agent asks a question mid-task, execution pauses and the question is surfaced to the CLI operator
 - [ ] **EXEC-03**: CLI operator can answer a surfaced question; the agent resumes with the answer
 - [x] **EXEC-04**: Agent writes structured output to a designated markdown memory bank file; harness reads this as task output
 
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GIT-01 | Phase 4 | Complete |
 | GIT-02 | Phase 4 | Complete |
 | EXEC-01 | Phase 2 | Complete |
-| EXEC-02 | Phase 7 | Pending |
+| EXEC-02 | Phase 7 | Complete |
 | EXEC-03 | Phase 7 | Pending |
 | EXEC-04 | Phase 2 | Complete |
 | WKFL-01 | Phase 2 | Complete |

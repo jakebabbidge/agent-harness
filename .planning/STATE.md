@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-05T07:39:45.952Z"
-last_activity: "2026-03-05 — 06-01 complete: Wire state persistence and CLI dry-run"
+status: in-progress
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-05T07:57:05Z"
+last_activity: "2026-03-05 — 07-01 complete: Agent-runner and host-side question polling"
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_plans: 17
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Multiple concurrent coding agent tasks run in full isolation against a codebase, coordinated by a declarative workflow graph, with human oversight surfaced at the CLI when agents need input.
-**Current focus:** Phase 6 — Wire State Persistence & CLI Dry-Run
+**Current focus:** Phase 7 — Restore HITL for Container Model
 
 ## Current Position
 
-Phase: 6 of 6 (Wire State Persistence & CLI Dry-Run)
-Plan: 1 of 1 complete in current phase (06-01 complete)
-Status: Complete
-Last activity: 2026-03-05 — 06-01 complete: Wire state persistence and CLI dry-run
+Phase: 7 of 7 (Restore HITL for Container Model)
+Plan: 1 of 2 complete in current phase (07-01 complete)
+Status: In Progress
+Last activity: 2026-03-05 — 07-01 complete: Agent-runner and host-side question polling
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 | Phase 05 P01 | 3min | 3 tasks | 5 files |
 | Phase 05 P02 | 2min | 3 tasks | 6 files |
 | Phase 06 P01 | 145s | 2 tasks | 6 files |
+| Phase 07 P01 | 207s | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,10 @@ Recent decisions affecting current work:
 - [Phase 05-02]: runId.slice(0,12) as container taskId -- fits Docker name constraints
 - [Phase 05-02]: ContainerManager.docker exposed readonly for ensureImage access -- avoids duplicate Dockerode instances
 - [Phase 05-02]: HITL/QuestionStore removed from executor -- not wired for container model, future design concern
+- [Phase 07-01]: agent-runner.js uses deny+message for AskUserQuestion interception -- delivers answer text as denial message per Phase 2 pattern
+- [Phase 07-01]: HARNESS_IPC_DIR env var controls IPC path -- enables nodeId-scoped subdirectories for future multi-node concurrent HITL
+- [Phase 07-01]: Host-side polling uses 500ms interval with containerDone flag -- same proven interval from Phase 2
+- [Phase 07-01]: Stale IPC file cleanup before container creation -- prevents stale question pickup from previous runs
 
 ### Pending Todos
 
@@ -124,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T07:39:45.943Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-restore-hitl-for-container-model/07-CONTEXT.md
+Last session: 2026-03-05T07:57:05Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: .planning/phases/07-restore-hitl-for-container-model/07-01-SUMMARY.md
