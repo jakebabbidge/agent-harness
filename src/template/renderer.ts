@@ -6,7 +6,7 @@
  * preventing partial bleed between concurrent renders.
  */
 
-import * as Handlebars from 'handlebars';
+import Handlebars from 'handlebars';
 import { loadTemplate, loadPartials } from './loader.js';
 import type { RenderResult, TemplateVariables } from '../types/index.js';
 
