@@ -27,9 +27,9 @@
 
 - [x] **WKFL-01**: User can define a workflow as a YAML file with nodes (prompt executions) and edges (execution order)
 - [x] **WKFL-02**: Workflow engine executes nodes sequentially in a defined linear chain
-- [ ] **WKFL-03**: Workflow engine executes independent nodes in parallel (fan-out concurrent execution)
-- [ ] **WKFL-04**: Workflow edges can define conditions based on node output to route to different next nodes
-- [ ] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
+- [x] **WKFL-03**: Workflow engine executes independent nodes in parallel (fan-out concurrent execution)
+- [x] **WKFL-04**: Workflow edges can define conditions based on node output to route to different next nodes
+- [x] **WKFL-05**: Workflow state is persisted to disk; interrupted workflows can be resumed from the last completed node
 
 ### Git Integration
 
@@ -81,9 +81,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXEC-04 | Phase 2 | Complete |
 | WKFL-01 | Phase 2 | Complete |
 | WKFL-02 | Phase 2 | Complete |
-| WKFL-03 | Phase 3 | Pending |
-| WKFL-04 | Phase 3 | Pending |
-| WKFL-05 | Phase 3 | Pending |
+| WKFL-03 | Phase 3 | Complete |
+| WKFL-04 | Phase 3 | Complete |
+| WKFL-05 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 16 total

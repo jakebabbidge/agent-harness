@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-03-PLAN.md — Phase 2 fully complete, all 6 requirements satisfied
-last_updated: "2026-03-05T03:17:29.361Z"
-last_activity: "2026-03-04 — 01-02 complete: Handlebars template engine, async loader, dryRunRender, 16 tests green"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-05T03:43:59.276Z"
+last_activity: "2026-03-05 — 03-01 complete: DAG topological sort, edge condition evaluator, workflow state persistence"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_plans: 10
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Multiple concurrent coding agent tasks run in full isolation against a codebase, coordinated by a declarative workflow graph, with human oversight surfaced at the CLI when agents need input.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 3 — Concurrent Workflow Engine
 
 ## Current Position
 
-Phase: 1 of 3 (Foundation)
-Plan: 3 of 4 in current phase (01-01, 01-02, 01-03 complete)
+Phase: 3 of 3 (Concurrent Workflow Engine)
+Plan: 1 of 3 in current phase (03-01 complete)
 Status: In progress
-Last activity: 2026-03-04 — 01-02 complete: Handlebars template engine, async loader, dryRunRender, 16 tests green
+Last activity: 2026-03-05 — 03-01 complete: DAG topological sort, edge condition evaluator, workflow state persistence
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██████████] 100%
 | Phase 02-single-task-execution P02 | 4min | 2 tasks | 6 files |
 | Phase 02-single-task-execution P03 | 2min | 1 tasks | 4 files |
 | Phase 02-single-task-execution P03 | 15min | 2 tasks | 6 files |
+| Phase 03-concurrent-workflow-engine P01 | 2min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 02-single-task-execution]: bin/agent-harness.ts created as thin delegator to cli/index.ts — avoids changing package.json bin entry while allowing program.parse() to live in index.ts
 - [Phase 02-single-task-execution]: API key guard placed before QuestionStore/TaskExecutor creation — prevents useless object creation when execution will fail
 - [Phase 02-single-task-execution]: esModuleInterop enabled (true) to support Handlebars default import — namespace import broke .create() at runtime; prior decision log was incorrect
+- [Phase 03-01]: createStateManager factory pattern for testable state directory scoping
+- [Phase 03-01]: Kahn's algorithm with BFS waves for natural tier grouping
+- [Phase 03-01]: Atomic write via tmp+rename for state corruption prevention
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T02:54:23.107Z
-Stopped at: Completed 02-03-PLAN.md — Phase 2 fully complete, all 6 requirements satisfied
+Last session: 2026-03-05T03:43:59.274Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
