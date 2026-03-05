@@ -1,9 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs/promises";
 import { TaskExecutor } from "../executor/executor.js";
 import { QuestionStore } from "../hitl/question-store.js";
 import { parseWorkflow } from "../workflow/parser.js";
 import { runWorkflow } from "../workflow/runner.js";
 import { renderTemplate } from "../template/renderer.js";
+import { BranchTracker } from "../git/tracker.js";
+import { createWorktree, removeWorktree } from "../git/worktree.js";
 
 export async function runCommand(
   target: string,
@@ -20,16 +25,24 @@ export async function runCommand(
 
   const isWorkflow = target.endsWith(".yaml") || target.endsWith(".yml");
 
+  // Shared runId and BranchTracker for both workflow and template mode
+  const runId = uuidv4();
+  const trackerDir = path.join(os.tmpdir(), "agent-harness", "branches");
+  await fs.mkdir(trackerDir, { recursive: true });
+  const tracker = new BranchTracker(path.join(trackerDir, `${runId}.json`));
+  console.log(`[agent-harness] Branch tracker: ${trackerDir}/${runId}.json`);
+
   try {
     if (isWorkflow) {
       // Workflow mode
       const workflow = await parseWorkflow(target);
-      const runId = uuidv4();
       console.log(`[agent-harness] Workflow run ID: ${runId}`);
 
       const result = await runWorkflow(workflow, executor, {
         runId,
         workflowPath: target,
+        tracker,
+        baseBranch: "main",
       });
 
       if (result.status === "failed") {
@@ -66,27 +79,37 @@ export async function runCommand(
       }
 
       const rendered = await renderTemplate(target, variables, []);
-      const runId = uuidv4();
 
-      const result = await executor.executeTask(
-        rendered.rendered,
-        options.repo,
-        runId,
-      );
+      // Worktree lifecycle for template mode
+      const taskId = runId.slice(0, 8);
+      const worktreeInfo = await createWorktree(options.repo, taskId, "main", tracker);
+      try {
+        const result = await executor.executeTask(
+          rendered.rendered,
+          worktreeInfo.worktreePath,
+          runId,
+        );
 
-      const truncated =
-        result.resultText.length > 200
-          ? result.resultText.slice(0, 200) + "..."
-          : result.resultText;
+        const truncated =
+          result.resultText.length > 200
+            ? result.resultText.slice(0, 200) + "..."
+            : result.resultText;
 
-      console.log(
-        `[agent-harness] Run ${runId} complete. Exit code: ${result.exitCode}`,
-      );
-      if (truncated) {
-        console.log(`[agent-harness] Result: ${truncated}`);
+        console.log(
+          `[agent-harness] Run ${runId} complete. Exit code: ${result.exitCode}`,
+        );
+        if (truncated) {
+          console.log(`[agent-harness] Result: ${truncated}`);
+        }
+
+        process.exit(result.exitCode);
+      } finally {
+        try {
+          await removeWorktree(options.repo, taskId, tracker);
+        } catch (cleanupErr) {
+          console.warn(`[agent-harness] Failed to clean up worktree: ${cleanupErr}`);
+        }
       }
-
-      process.exit(result.exitCode);
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
