@@ -1,9 +1,10 @@
-// @integration — requires Docker socket
+// @integration -- requires Docker socket and agent-harness:latest image
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { existsSync } from 'fs';
 import Dockerode from 'dockerode';
 import { ContainerManager, createContainerManager } from './manager.js';
 import { ContainerRegistry } from './registry.js';
+import { IMAGE_NAME } from './image.js';
 
 // Use DOCKER_AVAILABLE env var if set; otherwise fall back to socket file existence.
 // Note: socket file may exist but Docker daemon may not be running (e.g. Docker Desktop stopped).
@@ -17,6 +18,17 @@ const DOCKER_SOCKET =
   process.env.DOCKER_HOST?.replace('unix://', '') ?? '/var/run/docker.sock';
 const docker = new Dockerode({ socketPath: DOCKER_SOCKET });
 
+// Check if agent-harness:latest image is available
+let hasImage = false;
+try {
+  if (hasDocker) {
+    await docker.getImage(IMAGE_NAME).inspect();
+    hasImage = true;
+  }
+} catch {
+  // Image not built -- skip container creation tests
+}
+
 // Track containers created during tests for cleanup
 const createdContainerIds: string[] = [];
 
@@ -25,7 +37,7 @@ async function forceRemoveContainer(id: string): Promise<void> {
     const c = docker.getContainer(id);
     await c.remove({ force: true });
   } catch {
-    // Already removed — ignore
+    // Already removed -- ignore
   }
 }
 
@@ -95,7 +107,7 @@ describe.skipIf(!hasDocker)('ContainerRegistry', () => {
   });
 });
 
-describe.skipIf(!hasDocker)('ContainerManager integration', () => {
+describe.skipIf(!hasDocker || !hasImage)('ContainerManager integration', () => {
   let manager: ContainerManager;
 
   beforeEach(() => {
@@ -105,15 +117,15 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
 
   it('createContainer returns ContainerInfo with correct taskId and containerName pattern', async () => {
     const taskId = `test-create-${Date.now()}`;
-    const repoPath = '/tmp';
+    const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, repoPath);
+    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
     createdContainerIds.push(info.containerId);
 
     expect(info.taskId).toBe(taskId);
     expect(info.containerName).toBe(`agent-harness-task-${taskId}`);
     expect(info.containerId).toBeTruthy();
-    expect(info.repoPath).toBe(repoPath);
+    expect(info.repoPath).toBe(worktreePath);
     expect(info.startedAt).toBeInstanceOf(Date);
 
     // Clean up
@@ -122,20 +134,26 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
     if (idx !== -1) createdContainerIds.splice(idx, 1);
   }, 30_000);
 
-  it('inspect after createContainer shows correct isolation HostConfig flags', async () => {
+  it('inspect after createContainer shows correct devcontainer HostConfig flags', async () => {
     const taskId = `test-inspect-${Date.now()}`;
-    const repoPath = '/tmp';
+    const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, repoPath);
+    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
     createdContainerIds.push(info.containerId);
 
     const container = docker.getContainer(info.containerId);
     const inspected = await container.inspect();
     const hc = inspected.HostConfig;
 
-    expect(hc.NetworkMode).toBe('none');
+    // Devcontainer model: bridge networking with NET_ADMIN/NET_RAW caps
     expect(hc.AutoRemove).toBe(true);
-    expect(hc.ReadonlyRootfs).toBe(true);
+    expect(hc.CapAdd).toContain('NET_ADMIN');
+    expect(hc.CapAdd).toContain('NET_RAW');
+
+    // Volume mounts: workspace (rw) and .claude (ro)
+    const binds = hc.Binds ?? [];
+    expect(binds.some((b: string) => b.includes('/workspace:rw'))).toBe(true);
+    expect(binds.some((b: string) => b.includes('/.claude:'))).toBe(true);
 
     // Clean up
     await manager.stopContainer(taskId);
@@ -145,9 +163,9 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
 
   it('stopContainer removes the container from registry and it no longer exists in Docker', async () => {
     const taskId = `test-stop-${Date.now()}`;
-    const repoPath = '/tmp';
+    const worktreePath = '/tmp';
 
-    const info = await manager.createContainer(taskId, repoPath);
+    const info = await manager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
     const containerId = info.containerId;
     createdContainerIds.push(containerId);
 
@@ -186,13 +204,12 @@ describe.skipIf(!hasDocker)('ContainerManager integration', () => {
     // Create a container directly via dockerode, bypassing the manager
     const orphanName = `agent-harness-orphan-${Date.now()}`;
     const c = await docker.createContainer({
-      Image: 'node:20-alpine',
+      Image: IMAGE_NAME,
       name: orphanName,
-      Cmd: ['sh', '-c', 'sleep 60'],
+      Cmd: ['sleep', '60'],
       Labels: { 'agent-harness': 'true', 'agent-harness.task-id': 'orphan-task' },
       HostConfig: {
         AutoRemove: false, // Don't auto-remove so we can verify reclaimOrphans
-        NetworkMode: 'none',
       },
     });
     await c.start();
