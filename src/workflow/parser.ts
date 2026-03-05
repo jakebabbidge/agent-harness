@@ -9,9 +9,20 @@ export const NodeDefSchema = z.object({
   variables: z.record(z.unknown()).optional().default({}),
 });
 
+export const EdgeConditionSchema = z.object({
+  field: z.string(),
+  equals: z.string().optional(),
+  notEquals: z.string().optional(),
+  contains: z.string().optional(),
+}).refine(
+  (c) => c.equals !== undefined || c.notEquals !== undefined || c.contains !== undefined,
+  { message: 'EdgeCondition must have at least one operator (equals, notEquals, or contains)' },
+);
+
 export const EdgeDefSchema = z.object({
   from: z.string(),
   to: z.string(),
+  condition: EdgeConditionSchema.optional(),
 });
 
 export const WorkflowDefSchema = z.object({

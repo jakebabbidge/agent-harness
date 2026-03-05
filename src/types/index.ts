@@ -77,10 +77,19 @@ export interface NodeDef {
   variables?: Record<string, unknown>;
 }
 
+/** A condition on an edge that gates activation based on a node's output field. */
+export interface EdgeCondition {
+  field: string;
+  equals?: string;
+  notEquals?: string;
+  contains?: string;
+}
+
 /** An edge connecting two nodes in a workflow. */
 export interface EdgeDef {
   from: string;
   to: string;
+  condition?: EdgeCondition;
 }
 
 /** A complete workflow definition parsed from YAML. */
@@ -103,4 +112,23 @@ export interface RunState {
   status: 'running' | 'completed' | 'failed' | 'waiting_for_answer';
   startedAt: string;
   completedAt?: string;
+}
+
+/** Runtime state of a single node within a workflow run. */
+export interface NodeRunState {
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  result?: TaskResult;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+/** Persistent state of a complete workflow run (for save/load). */
+export interface WorkflowRunState {
+  runId: string;
+  workflowPath: string;
+  workflowDef: WorkflowDef;
+  status: 'running' | 'completed' | 'failed' | 'interrupted';
+  startedAt: string;
+  completedAt?: string;
+  nodeStates: Record<string, NodeRunState>;
 }

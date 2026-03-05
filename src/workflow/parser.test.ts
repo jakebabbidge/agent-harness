@@ -130,4 +130,53 @@ nodes:
 
     await expect(parseWorkflow(filePath)).rejects.toThrow(/ENOENT/);
   });
+
+  it('parses a workflow with conditional edges correctly', async () => {
+    const yaml = `
+version: "1.0"
+nodes:
+  - id: task-1
+    template: templates/coding-task.hbs
+    repo: /path/to/repo
+  - id: task-2
+    template: templates/review-task.hbs
+    repo: /path/to/repo
+edges:
+  - from: task-1
+    to: task-2
+    condition:
+      field: status
+      equals: approved
+`;
+    const filePath = path.join(tmpDir, 'workflow.yaml');
+    await fs.writeFile(filePath, yaml);
+
+    const result = await parseWorkflow(filePath);
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0].condition).toBeDefined();
+    expect(result.edges[0].condition!.field).toBe('status');
+    expect(result.edges[0].condition!.equals).toBe('approved');
+  });
+
+  it('throws validation error for condition with no operator', async () => {
+    const yaml = `
+version: "1.0"
+nodes:
+  - id: task-1
+    template: templates/coding-task.hbs
+    repo: /path/to/repo
+  - id: task-2
+    template: templates/review-task.hbs
+    repo: /path/to/repo
+edges:
+  - from: task-1
+    to: task-2
+    condition:
+      field: status
+`;
+    const filePath = path.join(tmpDir, 'workflow.yaml');
+    await fs.writeFile(filePath, yaml);
+
+    await expect(parseWorkflow(filePath)).rejects.toThrow();
+  });
 });
