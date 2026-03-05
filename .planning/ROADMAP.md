@@ -13,7 +13,7 @@ Agent Harness is built in three coarse phases that mirror the natural dependency
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Container infrastructure, git worktree isolation, prompt template engine, and IPC protocol — everything downstream phases depend on
-- [ ] **Phase 2: Single-Task Execution** - End-to-end: run one workflow node with a prompt against a repo, capture structured output, surface agent questions to the CLI operator, and resume on answer
+- [x] **Phase 2: Single-Task Execution** - End-to-end: run one workflow node with a prompt against a repo, capture structured output, surface agent questions to the CLI operator, and resume on answer (completed 2026-03-05)
 - [ ] **Phase 3: Concurrent Workflow Engine** - Fan-out parallel execution across isolated containers, conditional routing, and workflow resume after crash
 
 ## Phase Details
@@ -71,5 +71,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/4 | In Progress|  |
-| 2. Single-Task Execution | 1/3 | In Progress|  |
+| 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
 | 3. Concurrent Workflow Engine | 0/TBD | Not started | - |
