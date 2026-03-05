@@ -61,7 +61,12 @@ Plans:
   1. A workflow with two independent nodes fans out and executes both nodes concurrently in separate containers with separate git worktrees
   2. A workflow edge with a condition routes to different downstream nodes based on a field in the upstream node's output
   3. A workflow interrupted mid-run (process killed) can be resumed with `agent-harness resume <run-id>` and continues from the last completed node without re-running already-completed nodes
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Foundation modules: types, DAG scheduler, condition evaluator, state persistence
+- [ ] 03-02-PLAN.md — DAG-based concurrent runner replacing sequential runner
+- [ ] 03-03-PLAN.md — CLI resume command and end-to-end verification
 
 ## Progress
 
@@ -72,4 +77,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/4 | In Progress|  |
 | 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
-| 3. Concurrent Workflow Engine | 0/TBD | Not started | - |
+| 3. Concurrent Workflow Engine | 0/3 | Not started | - |
