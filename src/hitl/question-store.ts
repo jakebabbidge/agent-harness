@@ -5,13 +5,23 @@ import type { QuestionRecord, AnswerRecord } from '../types/index.js';
 
 export class QuestionStore {
   private readonly baseDir: string;
+  private readonly flat: boolean;
 
-  constructor(baseDir?: string) {
+  constructor(baseDir?: string, flat = false) {
     this.baseDir = baseDir ?? path.join(os.tmpdir(), 'agent-harness', 'runs');
+    this.flat = flat;
+  }
+
+  /**
+   * Create a QuestionStore for worktree-based IPC.
+   * Uses flat directory: worktreePath/.harness/ (no runId subdirectory).
+   */
+  static forWorktree(worktreePath: string): QuestionStore {
+    return new QuestionStore(path.join(worktreePath, '.harness'), true);
   }
 
   runDir(runId: string): string {
-    return path.join(this.baseDir, runId);
+    return this.flat ? this.baseDir : path.join(this.baseDir, runId);
   }
 
   async askAndWait(

@@ -123,6 +123,52 @@ describe('QuestionStore', () => {
     });
   });
 
+  describe('forWorktree', () => {
+    it('runDir returns <worktreePath>/.harness regardless of runId', async () => {
+      const wtStore = QuestionStore.forWorktree(tmpDir);
+      expect(wtStore.runDir('any-id')).toBe(path.join(tmpDir, '.harness'));
+      expect(wtStore.runDir('other-id')).toBe(path.join(tmpDir, '.harness'));
+    });
+
+    it('submitAnswer writes answer.json to flat .harness dir', async () => {
+      const harnessDir = path.join(tmpDir, '.harness');
+      await fs.mkdir(harnessDir, { recursive: true });
+
+      // Write question.json so submitAnswer doesn't throw
+      const question: QuestionRecord = {
+        runId: 'ignored',
+        questions: [{ question: 'Test?' }],
+        timestamp: new Date().toISOString(),
+      };
+      await fs.writeFile(path.join(harnessDir, 'question.json'), JSON.stringify(question));
+
+      const wtStore = QuestionStore.forWorktree(tmpDir);
+      await wtStore.submitAnswer('ignored', { '0': 'yes' });
+
+      const answerPath = path.join(harnessDir, 'answer.json');
+      const raw = await fs.readFile(answerPath, 'utf-8');
+      const answer = JSON.parse(raw);
+      expect(answer.answers['0']).toBe('yes');
+    });
+
+    it('getQuestion reads question.json from flat .harness dir', async () => {
+      const harnessDir = path.join(tmpDir, '.harness');
+      await fs.mkdir(harnessDir, { recursive: true });
+
+      const question: QuestionRecord = {
+        runId: 'test-run',
+        questions: [{ question: 'Color?' }],
+        timestamp: new Date().toISOString(),
+      };
+      await fs.writeFile(path.join(harnessDir, 'question.json'), JSON.stringify(question));
+
+      const wtStore = QuestionStore.forWorktree(tmpDir);
+      const result = await wtStore.getQuestion('any-run-id');
+      expect(result).not.toBeNull();
+      expect(result!.questions[0].question).toBe('Color?');
+    });
+  });
+
   describe('purgeRunDir', () => {
     it('removes the run directory', async () => {
       const runId = 'run-purge';
