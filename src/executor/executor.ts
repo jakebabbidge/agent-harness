@@ -1,26 +1,26 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { QuestionStore } from '../hitl/question-store.js';
+import type { ContainerManager } from '../container/manager.js';
 import type { TaskResult } from '../types/index.js';
 
 /**
- * TaskExecutor wraps the Claude Agent SDK query() function with HITL callback
- * wiring and structured result extraction.
+ * TaskExecutor delegates task execution to a Docker container via ContainerManager.
  *
  * Responsibilities:
- * - Purge stale run state before each execution
- * - Invoke SDK query() with the given prompt and worktree path as cwd
- * - Surface AskUserQuestion tool calls to QuestionStore.askAndWait for HITL
- * - Allow all other tool calls through without interruption
- * - Map SDK result subtype ("success" | error variants) to exitCode 0/1
- * - Read RESULT.md from the worktree path as structured task output
+ * - Write prompt to .harness/prompt.txt in the worktree
+ * - Create and start a container that runs Claude Code CLI with the prompt
+ * - Wait for the container process to exit
+ * - Read RESULT.md from the worktree as structured task output
+ *
+ * Note: HITL (human-in-the-loop) is not wired for the containerized model.
+ * The agent runs non-interactively with --dangerously-skip-permissions.
+ * HITL can be re-added when the container HITL mechanism is designed.
  */
 export class TaskExecutor {
-  private readonly questionStore: QuestionStore;
+  private readonly containerManager: ContainerManager;
 
-  constructor(questionStore: QuestionStore) {
-    this.questionStore = questionStore;
+  constructor(containerManager: ContainerManager) {
+    this.containerManager = containerManager;
   }
 
   async executeTask(
@@ -28,42 +28,21 @@ export class TaskExecutor {
     worktreePath: string,
     runId: string,
   ): Promise<TaskResult> {
-    // Purge any stale run state first to prevent stale answer pickup
-    await this.questionStore.purgeRunDir(runId);
+    // 1. Create .harness/ directory and write prompt file
+    const harnessDir = path.join(worktreePath, '.harness');
+    await fs.mkdir(harnessDir, { recursive: true });
+    await fs.writeFile(path.join(harnessDir, 'prompt.txt'), prompt, 'utf-8');
 
-    let exitCode = 1;
+    // 2. Use runId as taskId (truncate for Docker name constraints)
+    const taskId = runId.slice(0, 12);
 
-    const gen = query({
-      prompt,
-      options: {
-        cwd: worktreePath,
-        allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'AskUserQuestion'],
-        permissionMode: 'bypassPermissions',
-        allowDangerouslySkipPermissions: true,
-        canUseTool: async (toolName, input) => {
-          if (toolName === 'AskUserQuestion') {
-            const answers = await this.questionStore.askAndWait(runId, input as { questions: unknown[] });
-            return {
-              behavior: 'allow' as const,
-              updatedInput: { ...input, answers },
-            };
-          }
-          return {
-            behavior: 'allow' as const,
-            updatedInput: input,
-          };
-        },
-      },
-    });
+    // 3. Create and start container (container is started by createContainer)
+    await this.containerManager.createContainer(taskId, worktreePath, '.harness/prompt.txt');
 
-    for await (const message of gen) {
-      const msg = message as { type?: string; subtype?: string };
-      if (msg.type === 'result') {
-        exitCode = msg.subtype === 'success' ? 0 : 1;
-      }
-    }
+    // 4. Wait for container process to exit
+    const { StatusCode } = await this.containerManager.waitForExit(taskId);
 
-    // Read RESULT.md as structured output; default to empty string if missing
+    // 5. Read RESULT.md from worktree (mount persists after container exit)
     let resultText = '';
     try {
       resultText = await fs.readFile(path.join(worktreePath, 'RESULT.md'), 'utf-8');
@@ -73,6 +52,6 @@ export class TaskExecutor {
       }
     }
 
-    return { exitCode, resultText };
+    return { exitCode: StatusCode, resultText };
   }
 }
