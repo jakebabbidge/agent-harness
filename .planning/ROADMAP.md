@@ -84,15 +84,19 @@ Plans:
 - [ ] 04-02-PLAN.md — Wire BranchTracker and worktree creation into CLI entry points (run + resume)
 
 ### Phase 5: Wire Container Isolation
-**Goal**: ContainerManager is integrated into the execution pipeline so every task executes inside a Docker container with restricted network and filesystem access
+**Goal**: ContainerManager is integrated into the execution pipeline so every task executes inside a Docker container with iptables-based network isolation and restricted filesystem access
 **Depends on**: Phase 4
 **Requirements**: CONT-01, CONT-02
 **Gap Closure:** Closes gaps from audit
 **Success Criteria** (what must be TRUE):
-  1. `TaskExecutor` creates a Docker container via `ContainerManager` and runs the agent inside it
-  2. Containers are created with `NetworkMode: none` and `ReadonlyRootfs: true` enforced at runtime
-  3. Containers are cleaned up on both normal exit and crash (no zombie containers)
-**Plans**: 0 plans
+  1. `TaskExecutor` creates a Docker container via `ContainerManager` and runs the Claude CLI agent inside it
+  2. Containers use bridge networking with iptables firewall (default-deny, whitelisted: Anthropic API, npm, GitHub, DNS)
+  3. Containers are cleaned up on both normal exit (AutoRemove) and crash (reclaimOrphans on next startup)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Docker image artifacts, firewall script, image builder, and ContainerManager rework
+- [ ] 05-02-PLAN.md — TaskExecutor rewrite for container execution, runner and CLI wiring
 
 ### Phase 6: Wire State Persistence & CLI Dry-Run
 **Goal**: Workflow state is persisted during runs (enabling resume) and dry-run template rendering is exposed via the CLI
@@ -116,5 +120,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | 2. Single-Task Execution | 3/3 | Complete   | 2026-03-05 |
 | 3. Concurrent Workflow Engine | 3/3 | Complete   | 2026-03-05 |
 | 4. Wire Git Worktree Isolation | 0/2 | In Progress|  |
-| 5. Wire Container Isolation | 0/0 | Pending    |  |
+| 5. Wire Container Isolation | 0/2 | Pending    |  |
 | 6. Wire State Persistence & CLI Dry-Run | 0/0 | Pending    |  |
