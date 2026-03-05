@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-05T05:32:42Z"
+status: executing
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-05T05:37:21.005Z"
 last_activity: "2026-03-05 — 04-01 complete: Wire worktree lifecycle into workflow runner"
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
   percent: 92
 ---
 
@@ -59,6 +59,7 @@ Progress: [█████████░] 92%
 | Phase 03 P02 | 4min | 1 tasks | 2 files |
 | Phase 03 P03 | 2min | 2 tasks | 3 files |
 | Phase 04 P01 | 2min | 2 tasks | 2 files |
+| Phase 04 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: worktreeTaskId = runId.slice(0,8)-nodeId for cross-run and cross-node uniqueness
 - [Phase 04-01]: Worktree creation outside try/catch, cleanup in finally -- ensures cleanup even on executor throw
 - [Phase 04-01]: Backward compatible: nodes without repo skip worktree lifecycle entirely
+- [Phase 04]: Shared runId and BranchTracker created at CLI level before mode dispatch -- consistent tracker lifecycle for both workflow and template paths
+- [Phase 04]: Resume path loads persisted tracker state and cleans stale worktrees (status=running) before re-executing -- prevents branch-already-exists errors
 
 ### Pending Todos
 
@@ -112,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T05:32:42Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-05T05:37:21.003Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
