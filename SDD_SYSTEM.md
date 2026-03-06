@@ -1,5 +1,3 @@
-# SDD_SYSTEM.md
-
 # Purpose
 
 This document defines a lightweight, spec-driven development standard for using coding agents such as Claude Code to build and evolve software systems.
@@ -67,7 +65,7 @@ The system should periodically refresh architectural and domain knowledge from t
 
 ---
 
-## File Responsibilities
+# File Responsibilities
 
 ## `/ai/.last-indexed`
 
@@ -91,7 +89,7 @@ indexer_version: <version>
 
 ---
 
-# `/ai/README.md`
+## `/ai/README.md`
 
 The entry point for agents and humans.
 
@@ -104,7 +102,7 @@ It should explain:
 
 It should be short and highly navigable.
 
-## Minimal template
+### Minimal template
 
 ```md
 # AI Context
@@ -135,7 +133,7 @@ It should be short and highly navigable.
 
 ---
 
-# `/ai/PROJECT.md`
+## `/ai/PROJECT.md`
 
 Defines the product and business intent behind the software.
 
@@ -150,7 +148,7 @@ It should capture:
 
 This is where agents get judgment, not implementation detail.
 
-## Minimal template
+### Minimal template
 
 ```md
 # Project
@@ -191,7 +189,7 @@ This is where agents get judgment, not implementation detail.
 
 ---
 
-# `/ai/TECH_STACK.md`
+## `/ai/TECH_STACK.md`
 
 Defines the technical operating model.
 
@@ -207,7 +205,7 @@ It should capture:
 
 It should not become a full onboarding handbook.
 
-## Minimal template
+### Minimal template
 
 ```md
 # Tech Stack
@@ -245,7 +243,7 @@ It should not become a full onboarding handbook.
 
 ---
 
-# `/ai/ARCHITECTURE.md`
+## `/ai/ARCHITECTURE.md`
 
 Defines the high-level shape of the system.
 
@@ -259,7 +257,7 @@ It should capture:
 
 It should stay at the level of architecture, not file-by-file implementation.
 
-## Minimal template
+### Minimal template
 
 ```md
 # Architecture
@@ -294,7 +292,7 @@ It should stay at the level of architecture, not file-by-file implementation.
 
 ---
 
-# `/ai/DOMAIN_MAP.md`
+## `/ai/DOMAIN_MAP.md`
 
 A navigation map of the domains in the codebase.
 
@@ -309,7 +307,7 @@ It should capture:
 
 It should remain concise.
 
-## Minimal template
+### Minimal template
 
 ```md
 # Domain Map
@@ -325,7 +323,7 @@ It should remain concise.
 
 ---
 
-# `/ai/domains/<domain-slug>.md`
+## `/ai/domains/<domain-slug>.md`
 
 Defines one domain or architectural area.
 
@@ -341,7 +339,7 @@ It should capture:
 
 This is the most useful document for change execution inside a bounded area.
 
-## Minimal template
+### Minimal template
 
 ```md
 # <Domain Name>
@@ -383,7 +381,7 @@ This is the most useful document for change execution inside a bounded area.
 
 ---
 
-# `/ai/adr/<slug>.md`
+## `/ai/adr/<slug>.md`
 
 Captures a single important architectural decision.
 
@@ -399,7 +397,7 @@ Examples:
 
 Do not create ADRs for trivial or obvious decisions.
 
-## Minimal template
+### Minimal template
 
 ```md
 # ADR: <Decision Title>
@@ -428,7 +426,7 @@ Do not create ADRs for trivial or obvious decisions.
 
 ---
 
-# `/ai/tasks/TASK-<slug>.md`
+## `/ai/tasks/TASK-<slug>.md`
 
 Defines one requested change.
 
@@ -445,7 +443,7 @@ A task file should contain:
 
 It may also link to domains or ADRs, but it should not duplicate them excessively.
 
-## Minimal template
+### Minimal template
 
 ```md
 # TASK: <Short Title>
@@ -741,7 +739,7 @@ Do not document imagined future architecture unless a task explicitly requests i
 
 # What Belongs Where
 
-### Put it in `PROJECT.md` when it explains:
+## Put it in `PROJECT.md` when it explains:
 
 - why the product exists
 - who it serves
