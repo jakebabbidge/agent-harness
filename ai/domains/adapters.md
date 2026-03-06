@@ -25,10 +25,9 @@ Abstraction layer over agent backends. Provides a uniform interface for the exec
 
 ## Key flows
 
-1. Execution engine creates adapter instance -> passes prompt and context -> adapter starts agent process
-2. Agent produces output -> adapter streams it to execution engine
-3. Agent asks a question -> adapter captures and formats it -> surfaces to execution engine
-4. Execution engine sends answer -> adapter relays to agent process
+1. Execution engine creates adapter instance -> calls `buildCommand()` to get the CLI invocation
+2. Agent produces output -> written to output file in shared volume
+3. Question surfacing is handled outside the adapter via hooks and IPC (see [Execution](./execution.md))
 
 ## Dependencies
 

@@ -9,8 +9,7 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 - Create isolated repo copies (worktree or directory copy) for each task
 - Manage Docker container lifecycle for agent execution
 - Start agent processes via the appropriate adapter
-- Queue agent questions and pause tasks waiting for answers
-- Resume tasks when answers are provided
+- Surface agent questions to the host via file-based IPC and relay user answers back
 - Track task state (running, paused, completed, failed)
 - Support multiple concurrent isolated tasks against the same repo
 
@@ -22,16 +21,15 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 
 ## Interfaces
 
-- Inputs: rendered prompt, target repo, agent adapter selection
-- Outputs: agent output, task status, queued questions
-- Public APIs/events: run(prompt, repo, adapter), getQuestions(taskId), answerQuestion(taskId, questionId, answer)
+- Inputs: rendered prompt, optional `QuestionHandler` callback
+- Outputs: agent output, task status
+- Public APIs/events: `executeRun(prompt, onQuestion?)`, `executeLogin()`
 
 ## Key flows
 
-1. CLI requests task execution -> execution engine clones/worktrees the repo -> builds Docker container -> starts agent via adapter
-2. Agent asks a question -> adapter captures it -> execution engine queues it and pauses the task
-3. User answers via CLI -> execution engine relays answer to adapter -> agent resumes
-4. Agent completes -> execution engine captures output -> updates task status
+1. CLI requests task execution -> execution engine builds Docker image -> spawns container with shared temp dir
+2. Agent calls `AskUserQuestion` -> in-container hook writes question JSON to shared dir -> host polls via `ipc.pollForQuestions()` -> invokes `QuestionHandler` callback -> writes answer JSON -> hook reads answer and responds to Claude Code
+3. Container exits -> execution engine reads output file -> cleans up IPC files and temp dir
 
 ## Dependencies
 
@@ -45,6 +43,9 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 
 ## High level code locations
 
-- Docker primitives (build, run, interactive run): `src/execution/docker.ts`
+- Docker primitives (build, run, spawn, interactive run): `src/execution/docker.ts`
 - Container lifecycle orchestration (executeRun, executeLogin, ensureImage): `src/execution/container-lifecycle.ts`
 - Docker image hash caching (rebuild detection): `src/execution/image-hash.ts`
+- File-based IPC (question polling, answer writing): `src/execution/ipc.ts`
+- In-container hook handler (intercepts AskUserQuestion): `docker/hook-handler.mjs`
+- Claude Code hook configuration: `docker/settings.json`

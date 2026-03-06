@@ -8,7 +8,7 @@ Agent Harness is a CLI application composed of five major subsystems: a CLI laye
 
 - **CLI layer** — command parsing, routing, and user interaction (including answering queued agent questions)
 - **Prompt engine** — loads, composes, and renders prompt templates with variable substitution from the global template library
-- **Execution engine** — manages isolated agent runs via Docker containers and repo isolation (worktrees or copied directories), handles question queuing and task pausing
+- **Execution engine** — manages isolated agent runs via Docker containers and repo isolation (worktrees or copied directories), surfaces agent questions to the host via file-based IPC
 - **Workflow engine** — parses declarative YAML/JSON workflow definitions, orchestrates DAG execution, routes inputs/outputs between nodes
 - **Agent adapters** — abstraction layer over agent backends; Claude Code adapter (with OAuth support) is the first implementation
 
@@ -24,9 +24,9 @@ Agent Harness is a CLI application composed of five major subsystems: a CLI laye
 
 1. User issues CLI command -> CLI parses and routes to appropriate subsystem
 2. Prompt engine loads template from `~/.agent-harness/`, substitutes variables, produces rendered prompt
-3. Execution engine creates isolated environment (Docker + repo copy/worktree), passes prompt to agent adapter
-4. Agent adapter runs the agent process, captures output, surfaces questions to the execution engine's queue
-5. User answers queued questions via CLI -> answers are relayed back to the paused agent
+3. Execution engine creates isolated environment (Docker container with shared temp dir), passes prompt to agent adapter
+4. In-container Claude Code hook intercepts `AskUserQuestion` -> writes question JSON to shared dir -> host polls and prompts user -> writes answer JSON -> hook reads answer and responds
+5. Container exits -> execution engine reads output and cleans up
 6. Workflow engine reads YAML definition, determines next node, invokes execution engine for each step, routes outputs to subsequent nodes
 
 ## External integrations

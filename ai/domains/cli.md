@@ -31,8 +31,7 @@ The user-facing command layer. Parses commands, routes to subsystems, and provid
 ## Key flows
 
 1. User runs a command -> CLI parses args -> routes to appropriate subsystem
-2. (Planned) User checks for questions -> CLI queries execution engine -> displays pending questions
-3. (Planned) User answers a question -> CLI relays answer to execution engine -> paused task resumes
+2. During `run`, agent questions are surfaced in real time via the `promptUserForAnswer` callback -> user answers interactively in the terminal -> answer is relayed back to the container via IPC
 
 ## Dependencies
 
@@ -47,3 +46,4 @@ The user-facing command layer. Parses commands, routes to subsystems, and provid
 
 - CLI program definition: `src/cli/index.ts`
 - CLI entry point: `src/main.ts`
+- Interactive question prompting (single/multi select, free text): `src/cli/prompt.ts`
