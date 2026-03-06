@@ -1,8 +1,22 @@
 import { Command } from 'commander';
 import { executeRun, executeLogin } from '../execution/container-lifecycle.js';
+import { renderTemplate } from '../prompts/index.js';
 import { promptUserForAnswer } from './prompt.js';
 
 const program = new Command();
+
+function collectVars(
+  value: string,
+  previous: Record<string, string>,
+): Record<string, string> {
+  const eqIndex = value.indexOf('=');
+  if (eqIndex === -1) {
+    throw new Error(`Invalid variable format: "${value}". Expected key=value`);
+  }
+  const key = value.slice(0, eqIndex);
+  const val = value.slice(eqIndex + 1);
+  return { ...previous, [key]: val };
+}
 
 program
   .name('agent-harness')
@@ -14,27 +28,68 @@ program
 program
   .command('run')
   .description(
-    'Run Claude Code with the given prompt in an isolated Docker container',
+    'Run Claude Code with a prompt template in an isolated Docker container',
   )
-  .argument('<prompt>', 'Prompt string to send to Claude Code')
-  .action(async (prompt: string) => {
-    try {
-      const result = await executeRun(prompt, promptUserForAnswer);
-      if (result.output.trim()) {
-        console.log(result.output.trim());
-      }
-      if (result.exitCode !== 0) {
-        if (result.stderr) {
-          console.error(result.stderr);
+  .argument('<template-name>', 'Name of the prompt template')
+  .option(
+    '--var <key=value>',
+    'Template variable (repeatable)',
+    collectVars,
+    {},
+  )
+  .action(
+    async (templateName: string, opts: { var: Record<string, string> }) => {
+      try {
+        const rendered = await renderTemplate({
+          templateName,
+          variables: opts.var,
+        });
+        const result = await executeRun(rendered, promptUserForAnswer);
+        if (result.output.trim()) {
+          console.log(result.output.trim());
         }
-        console.error(`Claude Code exited with code ${result.exitCode}`);
-        process.exit(result.exitCode);
+        if (result.exitCode !== 0) {
+          if (result.stderr) {
+            console.error(result.stderr);
+          }
+          console.error(`Claude Code exited with code ${result.exitCode}`);
+          process.exit(result.exitCode);
+        }
+      } catch (error) {
+        console.error(
+          (error as Error).message || 'An unexpected error occurred',
+        );
+        process.exit(1);
       }
-    } catch (error) {
-      console.error((error as Error).message || 'An unexpected error occurred');
-      process.exit(1);
-    }
-  });
+    },
+  );
+
+program
+  .command('dry-run')
+  .description('Render a prompt template and print it without executing')
+  .argument('<template-name>', 'Name of the prompt template')
+  .option(
+    '--var <key=value>',
+    'Template variable (repeatable)',
+    collectVars,
+    {},
+  )
+  .action(
+    async (templateName: string, opts: { var: Record<string, string> }) => {
+      try {
+        const rendered = await renderTemplate({
+          templateName,
+          variables: opts.var,
+        });
+        process.stdout.write(rendered);
+      } catch (error) {
+        console.error(
+          (error as Error).message || 'An unexpected error occurred',
+        );
+        process.exit(1);
+      }
+    },
+  );
 
 program
   .command('login')

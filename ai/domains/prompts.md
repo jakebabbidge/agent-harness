@@ -6,10 +6,10 @@ Manages the prompt template library. Loads, composes, and renders prompt templat
 
 ## Responsibilities
 
-- Load prompt templates from `~/.agent-harness/`
-- Support composing prompts from multiple template sections/components
-- Substitute variables into templates
-- Validate templates and report errors on missing variables or sections
+- Load prompt templates from `~/.agent-harness/prompts/`
+- Resolve `{{file://<path>}}` directives by inlining referenced files (recursive, with circular detection)
+- Compile templates with Handlebars (variables, loops, conditionals, etc.)
+- Validate templates and report errors on missing files, circular references, or missing variables (via Handlebars strict mode)
 
 ## Invariants
 
@@ -18,17 +18,17 @@ Manages the prompt template library. Loads, composes, and renders prompt templat
 
 ## Interfaces
 
-- Inputs: template name/path, variable map, composition directives
+- Inputs: template name, variable map (`Record<string, string>`)
 - Outputs: rendered prompt string
-- Public APIs/events: render(template, variables) -> string
+- Public APIs/events: `renderTemplate({ templateName, variables }) -> Promise<string>`
 
 ## Key flows
 
-1. Execution engine requests a prompt -> prompt engine resolves template path -> loads and composes sections -> substitutes variables -> returns rendered prompt
+1. CLI calls `renderTemplate()` -> loads template from `~/.agent-harness/prompts/<name>.md` -> resolves `{{file://...}}` directives recursively -> compiles with Handlebars (strict mode) -> returns rendered prompt
 
 ## Dependencies
 
-- Upstream: execution, workflows (consumers of rendered prompts)
+- Upstream: CLI, workflows (consumers of rendered prompts)
 - Downstream: file system (template storage in `~/.agent-harness/`)
 
 ## Constraints
@@ -37,4 +37,7 @@ Manages the prompt template library. Loads, composes, and renders prompt templat
 
 ## High level code locations
 
-- (not yet implemented)
+- Template loading: `src/prompts/template-loader.ts`
+- File reference resolution: `src/prompts/file-resolver.ts`
+- Render orchestration (Handlebars compilation): `src/prompts/render.ts`
+- Barrel export: `src/prompts/index.ts`
