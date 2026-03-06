@@ -75,7 +75,6 @@ It should contain:
 
 - commit hash
 - timestamp
-- optional indexer version
 
 This file is machine-oriented and intentionally tiny.
 
@@ -84,7 +83,6 @@ This file is machine-oriented and intentionally tiny.
 ```text
 commit: <git-sha>
 timestamp: <iso-8601>
-indexer_version: <version>
 ```
 
 ---
