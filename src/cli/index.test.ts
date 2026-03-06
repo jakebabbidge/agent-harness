@@ -36,7 +36,7 @@ describe('CLI commands', () => {
     expect(runCmd!.description()).toContain('prompt template');
   });
 
-  it('run command should accept a template-name argument', () => {
+  it('run command should accept a template argument', () => {
     const runCmd = program.commands.find((cmd) => cmd.name() === 'run');
     const args = runCmd!.registeredArguments;
     expect(args).toHaveLength(1);
@@ -55,7 +55,7 @@ describe('CLI commands', () => {
     expect(dryRunCmd!.description()).toContain('Render');
   });
 
-  it('dry-run command should accept a template-name argument', () => {
+  it('dry-run command should accept a template argument', () => {
     const dryRunCmd = program.commands.find((cmd) => cmd.name() === 'dry-run');
     const args = dryRunCmd!.registeredArguments;
     expect(args).toHaveLength(1);

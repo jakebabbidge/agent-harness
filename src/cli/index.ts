@@ -30,7 +30,7 @@ program
   .description(
     'Run Claude Code with a prompt template in an isolated Docker container',
   )
-  .argument('<template-name>', 'Name of the prompt template')
+  .argument('<template>', 'Path to the prompt template file')
   .option(
     '--var <key=value>',
     'Template variable (repeatable)',
@@ -38,10 +38,10 @@ program
     {},
   )
   .action(
-    async (templateName: string, opts: { var: Record<string, string> }) => {
+    async (templatePath: string, opts: { var: Record<string, string> }) => {
       try {
         const rendered = await renderTemplate({
-          templateName,
+          templatePath,
           variables: opts.var,
         });
         const result = await executeRun(rendered, promptUserForAnswer);
@@ -67,7 +67,7 @@ program
 program
   .command('dry-run')
   .description('Render a prompt template and print it without executing')
-  .argument('<template-name>', 'Name of the prompt template')
+  .argument('<template>', 'Path to the prompt template file')
   .option(
     '--var <key=value>',
     'Template variable (repeatable)',
@@ -75,10 +75,10 @@ program
     {},
   )
   .action(
-    async (templateName: string, opts: { var: Record<string, string> }) => {
+    async (templatePath: string, opts: { var: Record<string, string> }) => {
       try {
         const rendered = await renderTemplate({
-          templateName,
+          templatePath,
           variables: opts.var,
         });
         process.stdout.write(rendered);

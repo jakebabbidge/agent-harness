@@ -25,8 +25,8 @@ The user-facing command layer. Parses commands, routes to subsystems, and provid
 
 ## Current commands
 
-- `run <template-name> [--var key=value...]` — loads and renders a prompt template, then runs Claude Code with it in an isolated Docker container
-- `dry-run <template-name> [--var key=value...]` — loads and renders a prompt template, prints the result to stdout without executing
+- `run <template> [--var key=value...]` — loads and renders a prompt template file, then runs Claude Code with it in an isolated Docker container
+- `dry-run <template> [--var key=value...]` — loads and renders a prompt template file, prints the result to stdout without executing
 - `login` — starts an interactive container for Claude Code OAuth login
 
 ## Key flows

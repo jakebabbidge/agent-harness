@@ -1,19 +1,19 @@
 import Handlebars from 'handlebars';
-import { getTemplatePath, loadTemplate } from './template-loader.js';
+import { resolveTemplatePath, loadTemplate } from './template-loader.js';
 import { resolveFileReferences } from './file-resolver.js';
 
 export interface RenderOptions {
-  templateName: string;
+  templatePath: string;
   variables: Record<string, string>;
 }
 
 export async function renderTemplate(options: RenderOptions): Promise<string> {
-  const { templateName, variables } = options;
+  const { templatePath, variables } = options;
 
-  const rawContent = await loadTemplate(templateName);
-  const templatePath = getTemplatePath(templateName);
+  const rawContent = await loadTemplate(templatePath);
+  const resolved = resolveTemplatePath(templatePath);
 
-  const resolvedContent = await resolveFileReferences(rawContent, templatePath);
+  const resolvedContent = await resolveFileReferences(rawContent, resolved);
 
   const compiled = Handlebars.compile(resolvedContent, { strict: true });
   return compiled(variables);

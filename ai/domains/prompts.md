@@ -6,7 +6,7 @@ Manages the prompt template library. Loads, composes, and renders prompt templat
 
 ## Responsibilities
 
-- Load prompt templates from `~/.agent-harness/prompts/`
+- Load prompt templates from any file path (repository-local or absolute)
 - Resolve `{{file://<path>}}` directives by inlining referenced files (recursive, with circular detection)
 - Compile templates with Handlebars (variables, loops, conditionals, etc.)
 - Validate templates and report errors on missing files, circular references, or missing variables (via Handlebars strict mode)
@@ -18,22 +18,22 @@ Manages the prompt template library. Loads, composes, and renders prompt templat
 
 ## Interfaces
 
-- Inputs: template name, variable map (`Record<string, string>`)
+- Inputs: template file path, variable map (`Record<string, string>`)
 - Outputs: rendered prompt string
-- Public APIs/events: `renderTemplate({ templateName, variables }) -> Promise<string>`
+- Public APIs/events: `renderTemplate({ templatePath, variables }) -> Promise<string>`
 
 ## Key flows
 
-1. CLI calls `renderTemplate()` -> loads template from `~/.agent-harness/prompts/<name>.md` -> resolves `{{file://...}}` directives recursively -> compiles with Handlebars (strict mode) -> returns rendered prompt
+1. CLI calls `renderTemplate()` -> loads template from the given file path -> resolves `{{file://...}}` directives recursively -> compiles with Handlebars (strict mode) -> returns rendered prompt
 
 ## Dependencies
 
 - Upstream: CLI, workflows (consumers of rendered prompts)
-- Downstream: file system (template storage in `~/.agent-harness/`)
+- Downstream: file system (template files)
 
 ## Constraints
 
-- Templates live in global config, not in the target repo
+- Templates can live anywhere on the file system (repository-local or absolute paths)
 
 ## High level code locations
 

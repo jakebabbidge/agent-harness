@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { resolve } from 'node:path';
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
 }));
 
 import { readFile } from 'node:fs/promises';
-import { getTemplatePath, loadTemplate } from './template-loader.js';
+import { resolveTemplatePath, loadTemplate } from './template-loader.js';
 
 const mockReadFile = vi.mocked(readFile);
 
@@ -15,22 +14,25 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('getTemplatePath', () => {
-  it('should resolve template name to the correct path', () => {
-    const result = getTemplatePath('my-template');
-    expect(result).toBe(
-      join(homedir(), '.agent-harness', 'prompts', 'my-template.md'),
-    );
+describe('resolveTemplatePath', () => {
+  it('should resolve a relative path to absolute', () => {
+    const result = resolveTemplatePath('prompts/my-template.md');
+    expect(result).toBe(resolve('prompts/my-template.md'));
+  });
+
+  it('should return absolute paths unchanged', () => {
+    const result = resolveTemplatePath('/absolute/path/template.md');
+    expect(result).toBe('/absolute/path/template.md');
   });
 });
 
 describe('loadTemplate', () => {
   it('should return file content on success', async () => {
     mockReadFile.mockResolvedValue('Hello {{name}}');
-    const result = await loadTemplate('greeting');
+    const result = await loadTemplate('/templates/greeting.md');
     expect(result).toBe('Hello {{name}}');
     expect(mockReadFile).toHaveBeenCalledWith(
-      getTemplatePath('greeting'),
+      '/templates/greeting.md',
       'utf-8',
     );
   });
@@ -40,13 +42,15 @@ describe('loadTemplate', () => {
     enoent.code = 'ENOENT';
     mockReadFile.mockRejectedValue(enoent);
 
-    await expect(loadTemplate('missing')).rejects.toThrow(
-      `Template not found: ${getTemplatePath('missing')}`,
+    await expect(loadTemplate('/missing/template.md')).rejects.toThrow(
+      'Template not found: /missing/template.md',
     );
   });
 
   it('should re-throw non-ENOENT errors', async () => {
     mockReadFile.mockRejectedValue(new Error('permission denied'));
-    await expect(loadTemplate('secret')).rejects.toThrow('permission denied');
+    await expect(loadTemplate('/secret/template.md')).rejects.toThrow(
+      'permission denied',
+    );
   });
 });

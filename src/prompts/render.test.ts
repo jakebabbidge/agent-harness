@@ -2,19 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('./template-loader.js', () => ({
   loadTemplate: vi.fn(),
-  getTemplatePath: vi.fn(),
+  resolveTemplatePath: vi.fn(),
 }));
 
 vi.mock('./file-resolver.js', () => ({
   resolveFileReferences: vi.fn(),
 }));
 
-import { loadTemplate, getTemplatePath } from './template-loader.js';
+import { loadTemplate, resolveTemplatePath } from './template-loader.js';
 import { resolveFileReferences } from './file-resolver.js';
 import { renderTemplate } from './render.js';
 
 const mockLoadTemplate = vi.mocked(loadTemplate);
-const mockGetTemplatePath = vi.mocked(getTemplatePath);
+const mockResolveTemplatePath = vi.mocked(resolveTemplatePath);
 const mockResolveFileReferences = vi.mocked(resolveFileReferences);
 
 beforeEach(() => {
@@ -24,16 +24,16 @@ beforeEach(() => {
 describe('renderTemplate', () => {
   it('should load, resolve file refs, and substitute variables', async () => {
     mockLoadTemplate.mockResolvedValue('Hello {{name}}!');
-    mockGetTemplatePath.mockReturnValue('/templates/greet.md');
+    mockResolveTemplatePath.mockReturnValue('/templates/greet.md');
     mockResolveFileReferences.mockResolvedValue('Hello {{name}}!');
 
     const result = await renderTemplate({
-      templateName: 'greet',
+      templatePath: '/templates/greet.md',
       variables: { name: 'Alice' },
     });
 
     expect(result).toBe('Hello Alice!');
-    expect(mockLoadTemplate).toHaveBeenCalledWith('greet');
+    expect(mockLoadTemplate).toHaveBeenCalledWith('/templates/greet.md');
     expect(mockResolveFileReferences).toHaveBeenCalledWith(
       'Hello {{name}}!',
       '/templates/greet.md',
@@ -42,14 +42,14 @@ describe('renderTemplate', () => {
 
   it('should throw when a variable is missing (Handlebars strict mode)', async () => {
     mockLoadTemplate.mockResolvedValue('Hello {{name}}, you are {{role}}');
-    mockGetTemplatePath.mockReturnValue('/templates/greet.md');
+    mockResolveTemplatePath.mockReturnValue('/templates/greet.md');
     mockResolveFileReferences.mockResolvedValue(
       'Hello {{name}}, you are {{role}}',
     );
 
     await expect(
       renderTemplate({
-        templateName: 'greet',
+        templatePath: '/templates/greet.md',
         variables: { name: 'Alice' },
       }),
     ).rejects.toThrow();
@@ -57,11 +57,11 @@ describe('renderTemplate', () => {
 
   it('should render template with no variables', async () => {
     mockLoadTemplate.mockResolvedValue('No variables here.');
-    mockGetTemplatePath.mockReturnValue('/templates/static.md');
+    mockResolveTemplatePath.mockReturnValue('/templates/static.md');
     mockResolveFileReferences.mockResolvedValue('No variables here.');
 
     const result = await renderTemplate({
-      templateName: 'static',
+      templatePath: '/templates/static.md',
       variables: {},
     });
 
@@ -69,22 +69,24 @@ describe('renderTemplate', () => {
   });
 
   it('should propagate errors from template loading', async () => {
-    mockLoadTemplate.mockRejectedValue(new Error('Template not found: /path'));
+    mockLoadTemplate.mockRejectedValue(
+      new Error('Template not found: /path.md'),
+    );
 
     await expect(
-      renderTemplate({ templateName: 'missing', variables: {} }),
+      renderTemplate({ templatePath: '/path.md', variables: {} }),
     ).rejects.toThrow('Template not found');
   });
 
   it('should propagate errors from file resolution', async () => {
     mockLoadTemplate.mockResolvedValue('{{file://bad.md}}');
-    mockGetTemplatePath.mockReturnValue('/templates/t.md');
+    mockResolveTemplatePath.mockReturnValue('/templates/t.md');
     mockResolveFileReferences.mockRejectedValue(
       new Error('File reference not found'),
     );
 
     await expect(
-      renderTemplate({ templateName: 't', variables: {} }),
+      renderTemplate({ templatePath: '/templates/t.md', variables: {} }),
     ).rejects.toThrow('File reference not found');
   });
 });
