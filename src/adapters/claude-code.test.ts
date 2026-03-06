@@ -5,29 +5,35 @@ describe('ClaudeCodeAdapter', () => {
   const adapter = new ClaudeCodeAdapter();
 
   describe('buildCommand', () => {
-    it('should return claude command with prompt and output path', () => {
+    it('should return sh -c command that redirects claude output to file', () => {
       const result = adapter.buildCommand({
         prompt: 'Hello world',
         outputPath: '/tmp/output/result.txt',
       });
 
       expect(result).toEqual([
-        'claude',
-        '--dangerously-skip-permissions',
-        '-p',
-        'Hello world',
-        '--output-file',
-        '/tmp/output/result.txt',
+        'sh',
+        '-c',
+        "claude --dangerously-skip-permissions -p 'Hello world' > /tmp/output/result.txt 2>&1",
       ]);
     });
 
-    it('should handle prompts with special characters', () => {
+    it('should shell-escape single quotes in prompts', () => {
+      const result = adapter.buildCommand({
+        prompt: "it's a test",
+        outputPath: '/tmp/output/result.txt',
+      });
+
+      expect(result[2]).toContain("'it'\\''s a test'");
+    });
+
+    it('should handle prompts with double quotes', () => {
       const result = adapter.buildCommand({
         prompt: 'Fix the "bug" in file.ts',
         outputPath: '/tmp/output/result.txt',
       });
 
-      expect(result[3]).toBe('Fix the "bug" in file.ts');
+      expect(result[2]).toContain('\'Fix the "bug" in file.ts\'');
     });
   });
 

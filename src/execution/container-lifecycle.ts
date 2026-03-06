@@ -45,6 +45,7 @@ export async function ensureImage(): Promise<void> {
 
 export interface RunResult {
   output: string;
+  stderr: string;
   exitCode: number;
 }
 
@@ -62,7 +63,7 @@ export async function executeRun(prompt: string): Promise<RunResult> {
       outputPath: outputPathInContainer,
     });
 
-    const { exitCode } = await runContainer({
+    const { exitCode, stdout, stderr } = await runContainer({
       image: IMAGE_TAG,
       command,
       volumes: [
@@ -79,12 +80,11 @@ export async function executeRun(prompt: string): Promise<RunResult> {
     try {
       output = await readFile(join(tempDir, OUTPUT_FILENAME), 'utf-8');
     } catch {
-      if (exitCode === 0) {
-        output = '(no output produced)';
-      }
+      // No IPC output file — fall back to container stdout
+      output = stdout || (exitCode === 0 ? '(no output produced)' : '');
     }
 
-    return { output, exitCode };
+    return { output, stderr, exitCode };
   } finally {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }

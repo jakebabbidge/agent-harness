@@ -3,13 +3,14 @@ import { AgentAdapter, AgentRunOptions } from './adapter.js';
 export class ClaudeCodeAdapter implements AgentAdapter {
   buildCommand(options: AgentRunOptions): string[] {
     return [
-      'claude',
-      '--dangerously-skip-permissions',
-      '-p',
-      options.prompt,
-      '--output-file',
-      options.outputPath,
+      'sh',
+      '-c',
+      `claude --dangerously-skip-permissions -p ${this.shellEscape(options.prompt)} > ${options.outputPath} 2>&1`,
     ];
+  }
+
+  private shellEscape(str: string): string {
+    return "'" + str.replace(/'/g, "'\\''") + "'";
   }
 
   buildLoginCommand(): string[] {

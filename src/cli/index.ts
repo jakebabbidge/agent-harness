@@ -19,10 +19,13 @@ program
   .action(async (prompt: string) => {
     try {
       const result = await executeRun(prompt);
-      if (result.output) {
-        console.log(result.output);
+      if (result.output.trim()) {
+        console.log(result.output.trim());
       }
       if (result.exitCode !== 0) {
+        if (result.stderr) {
+          console.error(result.stderr);
+        }
         console.error(`Claude Code exited with code ${result.exitCode}`);
         process.exit(result.exitCode);
       }

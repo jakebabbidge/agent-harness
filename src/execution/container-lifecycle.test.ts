@@ -107,9 +107,11 @@ describe('executeRun', () => {
 
     const callArgs = mockRunContainer.mock.calls[0][0];
     expect(callArgs.image).toBe('agent-harness:latest');
-    expect(callArgs.command).toContain('claude');
-    expect(callArgs.command).toContain('--dangerously-skip-permissions');
-    expect(callArgs.command).toContain('hello');
+    expect(callArgs.command[0]).toBe('sh');
+    expect(callArgs.command[1]).toBe('-c');
+    expect(callArgs.command[2]).toContain('claude');
+    expect(callArgs.command[2]).toContain('--dangerously-skip-permissions');
+    expect(callArgs.command[2]).toContain('hello');
     expect(callArgs.volumes).toHaveLength(2);
     expect(callArgs.capAdd).toEqual(['NET_ADMIN', 'NET_RAW']);
   });
@@ -124,16 +126,29 @@ describe('executeRun', () => {
     });
   });
 
-  it('should return non-zero exit code from container', async () => {
+  it('should return non-zero exit code and stderr from container', async () => {
     mockRunContainer.mockResolvedValueOnce({
       exitCode: 1,
       stdout: '',
-      stderr: 'error',
+      stderr: 'something went wrong',
     });
     mockReadFile.mockRejectedValueOnce(new Error('ENOENT') as never);
 
     const result = await executeRun('hello');
     expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe('something went wrong');
+  });
+
+  it('should fall back to container stdout when no output file exists', async () => {
+    mockRunContainer.mockResolvedValueOnce({
+      exitCode: 0,
+      stdout: 'stdout output',
+      stderr: '',
+    });
+    mockReadFile.mockRejectedValueOnce(new Error('ENOENT') as never);
+
+    const result = await executeRun('hello');
+    expect(result.output).toBe('stdout output');
   });
 
   it('should throw when Docker is not available', async () => {
