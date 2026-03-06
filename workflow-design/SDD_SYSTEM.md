@@ -125,10 +125,6 @@ It should be short and highly navigable.
 ## Architectural decisions
 
 - [<decision-title>](./adr/<slug>.md)
-
-## Active tasks
-
-- [TASK-<slug>](./tasks/TASK-<slug>.md)
 ```
 
 ---
@@ -377,6 +373,10 @@ This is the most useful document for change execution inside a bounded area.
 ## Constraints
 
 - <technical or business constraint>
+
+## High level code locations
+
+- [high level code file (no line numbers)]
 ```
 
 ---
