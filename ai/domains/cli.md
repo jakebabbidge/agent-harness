@@ -40,4 +40,5 @@ The user-facing command layer. Parses commands, routes to subsystems, and provid
 
 ## High level code locations
 
-- (not yet implemented)
+- CLI program definition: `src/cli/index.ts`
+- CLI entry point: `src/main.ts`
