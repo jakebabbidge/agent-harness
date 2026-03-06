@@ -140,6 +140,14 @@ export async function executeRun(
       output = stdout || (exitCode === 0 ? '(no output produced)' : '');
     }
 
+    // Dump hook handler log for debugging
+    try {
+      const hookLog = await readFile(join(tempDir, 'hook-handler.log'), 'utf-8');
+      console.error('[hook-handler.log]\n' + hookLog);
+    } catch {
+      console.error('[hook-handler.log] (not found)');
+    }
+
     return { output, stderr, exitCode };
   } finally {
     await cleanupIpcFiles(tempDir);

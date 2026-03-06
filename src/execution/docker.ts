@@ -104,7 +104,7 @@ export interface SpawnedContainer {
 }
 
 export function spawnContainer(options: DockerRunOptions): SpawnedContainer {
-  const args = ['run', '--rm'];
+  const args = ['run']; //, '--rm'];
 
   if (options.volumes) {
     for (const vol of options.volumes) {

@@ -48,6 +48,7 @@ function readLine(prompt: string): Promise<string> {
     });
     rl.question(prompt, (answer) => {
       rl.close();
+      process.stdin.unref();
       resolve(answer);
     });
   });

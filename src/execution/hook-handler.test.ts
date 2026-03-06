@@ -138,9 +138,12 @@ describe('hook-handler: AskUserQuestion', () => {
     expect(exitCode).toBe(0);
     expect(result.hookSpecificOutput.hookEventName).toBe('PreToolUse');
     expect(result.hookSpecificOutput.permissionDecision).toBe('allow');
+    expect(result.hookSpecificOutput.permissionDecisionReason).toBe(
+      'auto-allow',
+    );
+    expect(result.hookSpecificOutput.updatedInput.questions).toEqual(questions);
     expect(result.hookSpecificOutput.updatedInput.answers).toEqual({
       'Pick a number?': '1',
     });
-    expect(result.hookSpecificOutput.updatedInput.questions).toEqual(questions);
   });
 });
