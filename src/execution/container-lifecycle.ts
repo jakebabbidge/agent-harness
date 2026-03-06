@@ -142,7 +142,10 @@ export async function executeRun(
 
     // Dump hook handler log for debugging
     try {
-      const hookLog = await readFile(join(tempDir, 'hook-handler.log'), 'utf-8');
+      const hookLog = await readFile(
+        join(tempDir, 'hook-handler.log'),
+        'utf-8',
+      );
       console.error('[hook-handler.log]\n' + hookLog);
     } catch {
       console.error('[hook-handler.log] (not found)');
