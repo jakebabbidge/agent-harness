@@ -8,7 +8,7 @@ const HASH_FILE = join(homedir(), '.agent-harness', 'docker-image-hash');
 export async function computeContextHash(
   dockerContextPath: string,
 ): Promise<string> {
-  const files = ['Dockerfile', 'init-firewall.sh'];
+  const files = ['Dockerfile', 'init-firewall.sh', 'hook-handler.mjs'];
   const hash = createHash('sha256');
 
   for (const file of files) {
