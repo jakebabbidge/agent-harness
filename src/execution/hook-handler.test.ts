@@ -12,22 +12,13 @@ const hookScriptPath = join(
   'hook-handler.mjs',
 );
 
-let testDir: string;
-
-afterEach(async () => {
-  if (testDir) {
-    await rm(testDir, { recursive: true, force: true }).catch(() => {});
-  }
-});
-
 function runHook(
   stdinData: string,
-  env?: Record<string, string>,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
     const child = spawn('node', [hookScriptPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, ...env },
+      env: { ...process.env },
     });
 
     const stdoutChunks: Buffer[] = [];
@@ -50,56 +41,54 @@ function runHook(
   });
 }
 
-describe('hook-handler: non-AskUserQuestion', () => {
-  it('should return allow for Bash tool', async () => {
+describe('hook-handler: non-AskUserQuestion tools', () => {
+  it('should exit 0 with no output for non-question tools', async () => {
     const input = JSON.stringify({
       tool_name: 'Bash',
       tool_input: { command: 'echo hello' },
     });
 
     const { stdout, exitCode } = await runHook(input);
-    const result = JSON.parse(stdout);
 
     expect(exitCode).toBe(0);
-    expect(result.hookSpecificOutput.hookEventName).toBe('PermissionRequest');
-    expect(result.hookSpecificOutput.decision.behavior).toBe('allow');
-  });
-
-  it('should return allow for Write tool', async () => {
-    const input = JSON.stringify({
-      tool_name: 'Write',
-      tool_input: { path: '/tmp/test.txt' },
-    });
-
-    const { stdout } = await runHook(input);
-    const result = JSON.parse(stdout);
-
-    expect(result.hookSpecificOutput.decision.behavior).toBe('allow');
+    expect(stdout).toBe('');
   });
 });
 
 describe('hook-handler: invalid input', () => {
-  it('should return fallback for invalid JSON', async () => {
-    const { stdout } = await runHook('not json at all');
-    const result = JSON.parse(stdout);
+  it('should exit 0 with no output for invalid JSON', async () => {
+    const { stdout, exitCode } = await runHook('not json at all');
 
-    expect(result.hookSpecificOutput.decision.behavior).toBe('ask');
+    expect(exitCode).toBe(0);
+    expect(stdout).toBe('');
   });
 
-  it('should return fallback for empty stdin', async () => {
-    const { stdout } = await runHook('');
-    const result = JSON.parse(stdout);
+  it('should exit 0 with no output for empty stdin', async () => {
+    const { stdout, exitCode } = await runHook('');
 
-    expect(result.hookSpecificOutput.decision.behavior).toBe('ask');
+    expect(exitCode).toBe(0);
+    expect(stdout).toBe('');
   });
 });
 
 describe('hook-handler: AskUserQuestion', () => {
+  const ipcDir = '/tmp/output';
+
+  afterEach(async () => {
+    // Cleanup any leftover IPC files
+    try {
+      const files = await readdir(ipcDir);
+      for (const f of files) {
+        if (f.startsWith('question-') || f.startsWith('answer-')) {
+          await rm(join(ipcDir, f), { force: true });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  });
+
   it('should write question file to IPC dir and return answer', async () => {
-    // The hook script hardcodes /tmp/output as IPC_DIR.
-    // To test, we create /tmp/output if needed, run the hook,
-    // then check for question files and write an answer.
-    const ipcDir = '/tmp/output';
     const { mkdirSync, existsSync } = await import('node:fs');
     if (!existsSync(ipcDir)) {
       mkdirSync(ipcDir, { recursive: true });
@@ -147,17 +136,11 @@ describe('hook-handler: AskUserQuestion', () => {
     const result = JSON.parse(stdout);
 
     expect(exitCode).toBe(0);
-    expect(result.hookSpecificOutput.hookEventName).toBe('PermissionRequest');
-    expect(result.hookSpecificOutput.decision.behavior).toBe('allow');
-    expect(result.hookSpecificOutput.decision.updatedInput.answers).toEqual({
+    expect(result.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+    expect(result.hookSpecificOutput.permissionDecision).toBe('allow');
+    expect(result.hookSpecificOutput.updatedInput.answers).toEqual({
       'Pick a number?': '1',
     });
-    expect(result.hookSpecificOutput.decision.updatedInput.questions).toEqual(
-      questions,
-    );
-
-    // Cleanup
-    await rm(join(ipcDir, questionFile!), { force: true });
-    await rm(join(ipcDir, `answer-${answerId}.json`), { force: true });
+    expect(result.hookSpecificOutput.updatedInput.questions).toEqual(questions);
   });
 });

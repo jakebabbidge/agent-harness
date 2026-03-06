@@ -1,7 +1,8 @@
 {
   "hooks": {
-    "PermissionRequest": [
+    "PreToolUse": [
       {
+        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",

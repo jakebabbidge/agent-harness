@@ -140,7 +140,7 @@ describe('executeRun', () => {
     expect(callArgs.command[1]).toBe('-c');
     expect(callArgs.command[2]).toContain('cp /tmp/output/settings.json');
     expect(callArgs.command[2]).toContain('claude');
-    expect(callArgs.command[2]).not.toContain('--dangerously-skip-permissions');
+    expect(callArgs.command[2]).toContain('--dangerously-skip-permissions');
     expect(callArgs.command[2]).toContain('hello');
     expect(callArgs.volumes).toHaveLength(2);
     expect(callArgs.capAdd).toEqual(['NET_ADMIN', 'NET_RAW']);

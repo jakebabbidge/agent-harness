@@ -14,7 +14,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result).toEqual([
         'sh',
         '-c',
-        "claude -p 'Hello world' > /tmp/output/result.txt 2>&1",
+        "claude --dangerously-skip-permissions -p 'Hello world' > /tmp/output/result.txt 2>&1",
       ]);
     });
 

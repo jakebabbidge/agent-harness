@@ -5,7 +5,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return [
       'sh',
       '-c',
-      `claude -p ${this.shellEscape(options.prompt)} > ${options.outputPath} 2>&1`,
+      `claude --dangerously-skip-permissions -p ${this.shellEscape(options.prompt)} > ${options.outputPath} 2>&1`,
     ];
   }
 

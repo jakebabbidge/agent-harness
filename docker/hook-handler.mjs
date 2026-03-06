@@ -8,32 +8,12 @@ const IPC_DIR = '/tmp/output';
 const POLL_INTERVAL_MS = 500;
 const TIMEOUT_MS = 5 * 60 * 1000;
 
-function allowResponse() {
-  return JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: 'PermissionRequest',
-      decision: { behavior: 'allow' },
-    },
-  });
-}
-
-function fallbackResponse() {
-  return JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: 'PermissionRequest',
-      decision: { behavior: 'ask' },
-    },
-  });
-}
-
 function answerResponse(questions, answers) {
   return JSON.stringify({
     hookSpecificOutput: {
-      hookEventName: 'PermissionRequest',
-      decision: {
-        behavior: 'allow',
-        updatedInput: { questions, answers },
-      },
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'allow',
+      updatedInput: { questions, answers },
     },
   });
 }
@@ -67,7 +47,8 @@ async function handleAskUserQuestion(toolInput) {
     }
   }
 
-  return fallbackResponse();
+  // Timeout: let Claude Code handle it normally
+  return '';
 }
 
 async function main() {
@@ -77,12 +58,13 @@ async function main() {
 
     if (payload.tool_name === 'AskUserQuestion') {
       const response = await handleAskUserQuestion(payload.tool_input);
-      process.stdout.write(response);
-    } else {
-      process.stdout.write(allowResponse());
+      if (response) {
+        process.stdout.write(response);
+      }
+      // Empty stdout + exit 0 = allow the tool call to proceed normally
     }
   } catch {
-    process.stdout.write(fallbackResponse());
+    // Exit 0 with no output = allow tool call to proceed
   }
 }
 
