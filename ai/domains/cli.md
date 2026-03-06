@@ -23,11 +23,16 @@ The user-facing command layer. Parses commands, routes to subsystems, and provid
 - Outputs: task status, agent output, queued questions
 - Public APIs/events: command handlers registered with Commander.js
 
+## Current commands
+
+- `run <prompt>` — runs Claude Code with the given prompt in an isolated Docker container
+- `login` — starts an interactive container for Claude Code OAuth login
+
 ## Key flows
 
 1. User runs a command -> CLI parses args -> routes to appropriate subsystem
-2. User checks for questions -> CLI queries execution engine -> displays pending questions
-3. User answers a question -> CLI relays answer to execution engine -> paused task resumes
+2. (Planned) User checks for questions -> CLI queries execution engine -> displays pending questions
+3. (Planned) User answers a question -> CLI relays answer to execution engine -> paused task resumes
 
 ## Dependencies
 

@@ -45,4 +45,6 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 
 ## High level code locations
 
-- (not yet implemented)
+- Docker primitives (build, run, interactive run): `src/execution/docker.ts`
+- Container lifecycle orchestration (executeRun, executeLogin, ensureImage): `src/execution/container-lifecycle.ts`
+- Docker image hash caching (rebuild detection): `src/execution/image-hash.ts`

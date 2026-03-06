@@ -42,4 +42,5 @@ Abstraction layer over agent backends. Provides a uniform interface for the exec
 
 ## High level code locations
 
-- (not yet implemented)
+- Adapter interface (`AgentAdapter`, `AgentRunOptions`): `src/adapters/adapter.ts`
+- Claude Code adapter implementation: `src/adapters/claude-code.ts`

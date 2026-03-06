@@ -26,7 +26,8 @@
 ## Local workflow
 
 - Install: `pnpm install`
-- Run: `pnpm start` (needs confirmation)
+- Run: `pnpm start`
+- Build: `pnpm build`
 - Test: `pnpm test`
 - Lint/format: `pnpm lint && pnpm format`
 
