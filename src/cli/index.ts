@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { executeRun, executeLogin } from '../execution/container-lifecycle.js';
+import { promptUserForAnswer } from './prompt.js';
 
 const program = new Command();
 
@@ -18,7 +19,7 @@ program
   .argument('<prompt>', 'Prompt string to send to Claude Code')
   .action(async (prompt: string) => {
     try {
-      const result = await executeRun(prompt);
+      const result = await executeRun(prompt, promptUserForAnswer);
       if (result.output.trim()) {
         console.log(result.output.trim());
       }

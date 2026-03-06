@@ -1,24 +1,37 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import {
   isDockerAvailable,
   buildImage,
-  runContainer,
+  spawnContainer,
   runInteractiveContainer,
 } from './docker.js';
 import { needsRebuild, computeContextHash, storeHash } from './image-hash.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
+import {
+  pollForQuestions,
+  writeAnswer,
+  cleanupIpcFiles,
+  type Question,
+  type QuestionAnswer,
+} from './ipc.js';
 
 const IMAGE_TAG = 'agent-harness:latest';
 const CONTAINER_OUTPUT_DIR = '/tmp/output';
 const OUTPUT_FILENAME = 'result.txt';
 const CLAUDE_CONFIG_CONTAINER_PATH = '/home/node/.claude';
 
+export type QuestionHandler = (question: Question) => Promise<QuestionAnswer>;
+
 function getDockerContextPath(): string {
   const currentDir = fileURLToPath(new URL('.', import.meta.url));
   return join(currentDir, '..', '..', 'docker');
+}
+
+function getSettingsJsonPath(): string {
+  return join(getDockerContextPath(), 'settings.json');
 }
 
 export async function assertDockerAvailable(): Promise<void> {
@@ -49,7 +62,27 @@ export interface RunResult {
   exitCode: number;
 }
 
-export async function executeRun(prompt: string): Promise<RunResult> {
+async function handleQuestions(
+  dir: string,
+  signal: AbortSignal,
+  onQuestion?: QuestionHandler,
+): Promise<void> {
+  if (!onQuestion) return;
+
+  for await (const question of pollForQuestions(dir, signal)) {
+    try {
+      const answer = await onQuestion(question);
+      await writeAnswer(dir, answer);
+    } catch {
+      // If the user handler fails, skip the question (hook will timeout and fallback)
+    }
+  }
+}
+
+export async function executeRun(
+  prompt: string,
+  onQuestion?: QuestionHandler,
+): Promise<RunResult> {
   await assertDockerAvailable();
   await ensureImage();
 
@@ -58,12 +91,16 @@ export async function executeRun(prompt: string): Promise<RunResult> {
   const outputPathInContainer = join(CONTAINER_OUTPUT_DIR, OUTPUT_FILENAME);
 
   try {
+    // Copy settings.json to temp dir for file-level bind mount
+    const settingsContent = await readFile(getSettingsJsonPath(), 'utf-8');
+    await writeFile(join(tempDir, 'settings.json'), settingsContent);
+
     const command = adapter.buildCommand({
       prompt,
       outputPath: outputPathInContainer,
     });
 
-    const { exitCode, stdout, stderr } = await runContainer({
+    const { done } = spawnContainer({
       image: IMAGE_TAG,
       command,
       volumes: [
@@ -72,9 +109,26 @@ export async function executeRun(prompt: string): Promise<RunResult> {
           container: CLAUDE_CONFIG_CONTAINER_PATH,
         },
         { host: tempDir, container: CONTAINER_OUTPUT_DIR },
+        {
+          host: join(tempDir, 'settings.json'),
+          container: `${CLAUDE_CONFIG_CONTAINER_PATH}/settings.json`,
+        },
       ],
       capAdd: ['NET_ADMIN', 'NET_RAW'],
     });
+
+    // Poll for questions while container runs
+    const abortController = new AbortController();
+    const questionLoop = handleQuestions(
+      tempDir,
+      abortController.signal,
+      onQuestion,
+    );
+
+    // Wait for container to finish
+    const { exitCode, stdout, stderr } = await done;
+    abortController.abort();
+    await questionLoop;
 
     let output = '';
     try {
@@ -86,6 +140,7 @@ export async function executeRun(prompt: string): Promise<RunResult> {
 
     return { output, stderr, exitCode };
   } finally {
+    await cleanupIpcFiles(tempDir);
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
 }

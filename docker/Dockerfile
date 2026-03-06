@@ -16,5 +16,8 @@ RUN chmod +x /usr/local/bin/init-firewall.sh
 ENV CLAUDE_CONFIG_DIR=/home/node/.claude
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
+# Copy hook handler script
+COPY hook-handler.mjs /opt/agent-harness/hook-handler.mjs
+
 USER node
 WORKDIR /home/node

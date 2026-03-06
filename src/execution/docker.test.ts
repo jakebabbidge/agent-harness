@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isDockerAvailable, buildImage, runContainer } from './docker.js';
+import {
+  isDockerAvailable,
+  buildImage,
+  runContainer,
+  spawnContainer,
+} from './docker.js';
 
 vi.mock('node:child_process', () => {
   const execFile = vi.fn();
@@ -10,9 +15,11 @@ vi.mock('node:util', () => ({
   promisify: (fn: unknown) => fn,
 }));
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { EventEmitter, Readable } from 'node:stream';
 
 const mockExecFile = vi.mocked(execFile) as unknown as ReturnType<typeof vi.fn>;
+const mockSpawn = vi.mocked(spawn) as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -153,5 +160,120 @@ describe('runContainer', () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe('some output');
     expect(result.stderr).toBe('some error');
+  });
+});
+
+function createMockChildProcess(stdoutData?: string, stderrData?: string) {
+  const child = new EventEmitter() as EventEmitter & {
+    stdout: Readable;
+    stderr: Readable;
+  };
+  child.stdout = new Readable({
+    read() {
+      if (stdoutData) {
+        this.push(Buffer.from(stdoutData));
+      }
+      this.push(null);
+    },
+  });
+  child.stderr = new Readable({
+    read() {
+      if (stderrData) {
+        this.push(Buffer.from(stderrData));
+      }
+      this.push(null);
+    },
+  });
+  return child;
+}
+
+describe('spawnContainer', () => {
+  it('should call spawn with correct docker args', () => {
+    const child = createMockChildProcess();
+    mockSpawn.mockReturnValueOnce(child);
+
+    spawnContainer({
+      image: 'agent-harness:latest',
+      command: ['sh', '-c', 'echo hello'],
+    });
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'docker',
+      expect.arrayContaining([
+        'run',
+        '--rm',
+        'agent-harness:latest',
+        'sh',
+        '-c',
+        'echo hello',
+      ]),
+      { stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+  });
+
+  it('should resolve done promise with exit code and output', async () => {
+    const child = createMockChildProcess('hello', '');
+    mockSpawn.mockReturnValueOnce(child);
+
+    const { done } = spawnContainer({
+      image: 'test',
+      command: ['echo'],
+    });
+
+    // Allow streams to be consumed before emitting close
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    child.emit('close', 0);
+
+    const result = await done;
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe('hello');
+    expect(result.stderr).toBe('');
+  });
+
+  it('should pass volume mounts', () => {
+    const child = createMockChildProcess();
+    mockSpawn.mockReturnValueOnce(child);
+
+    spawnContainer({
+      image: 'test',
+      command: ['echo'],
+      volumes: [{ host: '/host/path', container: '/container/path' }],
+    });
+
+    const args = mockSpawn.mock.calls[0][1] as string[];
+    expect(args).toContain('-v');
+    expect(args).toContain('/host/path:/container/path');
+  });
+
+  it('should pass cap-add flags', () => {
+    const child = createMockChildProcess();
+    mockSpawn.mockReturnValueOnce(child);
+
+    spawnContainer({
+      image: 'test',
+      command: ['echo'],
+      capAdd: ['NET_ADMIN'],
+    });
+
+    const args = mockSpawn.mock.calls[0][1] as string[];
+    expect(args).toContain('--cap-add');
+    expect(args).toContain('NET_ADMIN');
+  });
+
+  it('should handle non-zero exit code', async () => {
+    const child = createMockChildProcess('', 'error');
+    mockSpawn.mockReturnValueOnce(child);
+
+    const { done } = spawnContainer({
+      image: 'test',
+      command: ['false'],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    child.emit('close', 1);
+
+    const result = await done;
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe('error');
   });
 });

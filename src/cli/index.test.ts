@@ -5,6 +5,10 @@ vi.mock('../execution/container-lifecycle.js', () => ({
   executeLogin: vi.fn(),
 }));
 
+vi.mock('./prompt.js', () => ({
+  promptUserForAnswer: vi.fn(),
+}));
+
 import { program } from './index.js';
 
 describe('CLI entry point', () => {
