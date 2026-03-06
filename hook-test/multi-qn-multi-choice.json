@@ -1,0 +1,127 @@
+{
+  "session_id": "9a162817-4143-49dc-988c-85c73aee80d2",
+  "transcript_path": "/Users/jake/.claude/projects/-Users-jake-dev-agent-harness-demo/9a162817-4143-49dc-988c-85c73aee80d2.jsonl",
+  "cwd": "/Users/jake/dev/agent-harness/demo",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "AskUserQuestion",
+  "tool_input": {
+    "questions": [
+      {
+        "question": "What is your favourite programming language?",
+        "header": "Language",
+        "options": [
+          {
+            "label": "Python",
+            "description": "General-purpose, great for scripting and data science"
+          },
+          {
+            "label": "TypeScript",
+            "description": "Typed JavaScript for web and server-side development"
+          },
+          {
+            "label": "Rust",
+            "description": "Systems programming with memory safety guarantees"
+          },
+          {
+            "label": "Go",
+            "description": "Simple, fast, and great for concurrent applications"
+          }
+        ],
+        "multiSelect": false
+      },
+      {
+        "question": "What are your favourite hobbies? (Select all that apply)",
+        "header": "Hobbies",
+        "options": [
+          {
+            "label": "Gaming",
+            "description": "Video games, board games, or tabletop games"
+          },
+          {
+            "label": "Reading",
+            "description": "Books, articles, or other written content"
+          },
+          {
+            "label": "Sports",
+            "description": "Playing or watching athletic activities"
+          },
+          {
+            "label": "Music",
+            "description": "Playing instruments, singing, or listening"
+          }
+        ],
+        "multiSelect": true
+      }
+    ],
+    "answers": {
+      "What is your favourite programming language?": "TypeScript",
+      "What are your favourite hobbies? (Select all that apply)": "Reading, Music, I love to code too"
+    },
+    "annotations": {
+      "What are your favourite hobbies? (Select all that apply)": {
+        "notes": "I love to code too!"
+      }
+    }
+  },
+  "tool_response": {
+    "questions": [
+      {
+        "question": "What is your favourite programming language?",
+        "header": "Language",
+        "options": [
+          {
+            "label": "Python",
+            "description": "General-purpose, great for scripting and data science"
+          },
+          {
+            "label": "TypeScript",
+            "description": "Typed JavaScript for web and server-side development"
+          },
+          {
+            "label": "Rust",
+            "description": "Systems programming with memory safety guarantees"
+          },
+          {
+            "label": "Go",
+            "description": "Simple, fast, and great for concurrent applications"
+          }
+        ],
+        "multiSelect": false
+      },
+      {
+        "question": "What are your favourite hobbies? (Select all that apply)",
+        "header": "Hobbies",
+        "options": [
+          {
+            "label": "Gaming",
+            "description": "Video games, board games, or tabletop games"
+          },
+          {
+            "label": "Reading",
+            "description": "Books, articles, or other written content"
+          },
+          {
+            "label": "Sports",
+            "description": "Playing or watching athletic activities"
+          },
+          {
+            "label": "Music",
+            "description": "Playing instruments, singing, or listening"
+          }
+        ],
+        "multiSelect": true
+      }
+    ],
+    "answers": {
+      "What is your favourite programming language?": "TypeScript",
+      "What are your favourite hobbies? (Select all that apply)": "Reading, Music, I love to code too"
+    },
+    "annotations": {
+      "What are your favourite hobbies? (Select all that apply)": {
+        "notes": "I love to code too!"
+      }
+    }
+  },
+  "tool_use_id": "toolu_01Aed65jXZss6FDX7MZkUD7Y"
+}

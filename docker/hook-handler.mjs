@@ -35,12 +35,8 @@ function answerResponse(questions, answers) {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
-      permissionDecision: 'allow',
-      permissionDecisionReason: 'auto-allow',
-      updatedInput: {
-        questions: questions,
-        answers,
-      },
+      permissionDecision: 'deny',
+      permissionDecisionReason: formatAnswerReason(questions, answers),
     },
   });
 }
