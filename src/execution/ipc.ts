@@ -54,11 +54,14 @@ export async function* pollForQuestions(
     }
 
     await new Promise<void>((resolve) => {
-      const timer = setTimeout(resolve, POLL_INTERVAL_MS);
       const onAbort = () => {
         clearTimeout(timer);
         resolve();
       };
+      const timer = setTimeout(() => {
+        signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, POLL_INTERVAL_MS);
       signal.addEventListener('abort', onAbort, { once: true });
     });
   }

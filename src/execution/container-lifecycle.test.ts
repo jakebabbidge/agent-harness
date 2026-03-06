@@ -138,14 +138,15 @@ describe('executeRun', () => {
     expect(callArgs.image).toBe('agent-harness:latest');
     expect(callArgs.command[0]).toBe('sh');
     expect(callArgs.command[1]).toBe('-c');
+    expect(callArgs.command[2]).toContain('cp /tmp/output/settings.json');
     expect(callArgs.command[2]).toContain('claude');
     expect(callArgs.command[2]).not.toContain('--dangerously-skip-permissions');
     expect(callArgs.command[2]).toContain('hello');
-    expect(callArgs.volumes).toHaveLength(3);
+    expect(callArgs.volumes).toHaveLength(2);
     expect(callArgs.capAdd).toEqual(['NET_ADMIN', 'NET_RAW']);
   });
 
-  it('should include settings.json file-level volume mount', async () => {
+  it('should copy settings.json via command instead of file mount', async () => {
     mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
     mockReadFile
       .mockResolvedValueOnce('{"hooks":{}}' as never)
@@ -154,11 +155,15 @@ describe('executeRun', () => {
     await executeRun('hello');
 
     const callArgs = mockSpawnContainer.mock.calls[0][0];
-    const settingsMount = callArgs.volumes?.find(
-      (v) => v.container === '/home/node/.claude/settings.json',
+    // No file-level mount for settings.json
+    const settingsMount = callArgs.volumes?.find((v: { container: string }) =>
+      v.container.includes('settings.json'),
     );
-    expect(settingsMount).toBeDefined();
-    expect(settingsMount!.host).toBe('/tmp/agent-harness-xyz/settings.json');
+    expect(settingsMount).toBeUndefined();
+    // Settings copy is in the command
+    expect(callArgs.command[2]).toContain(
+      'cp /tmp/output/settings.json /home/node/.claude/settings.json',
+    );
   });
 
   it('should write settings.json to temp dir', async () => {

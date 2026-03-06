@@ -95,10 +95,16 @@ export async function executeRun(
     const settingsContent = await readFile(getSettingsJsonPath(), 'utf-8');
     await writeFile(join(tempDir, 'settings.json'), settingsContent);
 
-    const command = adapter.buildCommand({
+    const adapterCommand = adapter.buildCommand({
       prompt,
       outputPath: outputPathInContainer,
     });
+
+    // Copy settings.json from shared volume into Claude config dir before running.
+    // File-level bind mounts over directory mounts are unreliable on Docker for Mac,
+    // so we copy at runtime instead.
+    const settingsCopy = `cp ${CONTAINER_OUTPUT_DIR}/settings.json ${CLAUDE_CONFIG_CONTAINER_PATH}/settings.json`;
+    const command = ['sh', '-c', `${settingsCopy} && ${adapterCommand[2]}`];
 
     const { done } = spawnContainer({
       image: IMAGE_TAG,
@@ -109,10 +115,6 @@ export async function executeRun(
           container: CLAUDE_CONFIG_CONTAINER_PATH,
         },
         { host: tempDir, container: CONTAINER_OUTPUT_DIR },
-        {
-          host: join(tempDir, 'settings.json'),
-          container: `${CLAUDE_CONFIG_CONTAINER_PATH}/settings.json`,
-        },
       ],
       capAdd: ['NET_ADMIN', 'NET_RAW'],
     });
