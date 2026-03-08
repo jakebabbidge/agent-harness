@@ -1,9 +1,8 @@
 export interface AgentRunOptions {
-  prompt: string;
+  promptPath: string;
   outputPath: string;
 }
 
 export interface AgentAdapter {
   buildCommand(options: AgentRunOptions): string[];
-  buildLoginCommand(): string[];
 }

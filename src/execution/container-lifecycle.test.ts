@@ -4,7 +4,6 @@ vi.mock('./docker.js', () => ({
   isDockerAvailable: vi.fn(),
   buildImage: vi.fn(),
   spawnContainer: vi.fn(),
-  runInteractiveContainer: vi.fn(),
 }));
 
 vi.mock('./image-hash.js', () => ({
@@ -21,41 +20,45 @@ vi.mock('./ipc.js', () => ({
   cleanupIpcFiles: vi.fn(),
 }));
 
+vi.mock('./token.js', () => ({
+  loadToken: vi.fn(),
+  extractAndSaveToken: vi.fn(),
+}));
+
 vi.mock('node:fs/promises', () => ({
   mkdtemp: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   rm: vi.fn(),
+  copyFile: vi.fn(),
 }));
 
-import {
-  isDockerAvailable,
-  spawnContainer,
-  runInteractiveContainer,
-} from './docker.js';
+import { isDockerAvailable, spawnContainer, buildImage } from './docker.js';
 import { needsRebuild, computeContextHash, storeHash } from './image-hash.js';
 import { cleanupIpcFiles } from './ipc.js';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { loadToken, extractAndSaveToken } from './token.js';
+import { mkdtemp, readFile, writeFile, rm, copyFile } from 'node:fs/promises';
 import {
   assertDockerAvailable,
   ensureImage,
   executeRun,
   executeLogin,
 } from './container-lifecycle.js';
-import { buildImage } from './docker.js';
 
 const mockIsDockerAvailable = vi.mocked(isDockerAvailable);
 const mockBuildImage = vi.mocked(buildImage);
 const mockSpawnContainer = vi.mocked(spawnContainer);
-const mockRunInteractiveContainer = vi.mocked(runInteractiveContainer);
 const mockNeedsRebuild = vi.mocked(needsRebuild);
 const mockComputeContextHash = vi.mocked(computeContextHash);
 const mockStoreHash = vi.mocked(storeHash);
 const mockCleanupIpcFiles = vi.mocked(cleanupIpcFiles);
+const mockLoadToken = vi.mocked(loadToken);
+const mockExtractAndSaveToken = vi.mocked(extractAndSaveToken);
 const mockMkdtemp = vi.mocked(mkdtemp);
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 const mockRm = vi.mocked(rm);
+const mockCopyFile = vi.mocked(copyFile);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -76,9 +79,14 @@ describe('assertDockerAvailable', () => {
 });
 
 describe('ensureImage', () => {
-  it('should skip build when image is up to date', async () => {
+  beforeEach(() => {
+    mockCopyFile.mockResolvedValue(undefined as never);
+  });
+
+  it('should copy runtime and skip build when image is up to date', async () => {
     mockNeedsRebuild.mockResolvedValueOnce(false);
     await ensureImage();
+    expect(mockCopyFile).toHaveBeenCalledTimes(1);
     expect(mockBuildImage).not.toHaveBeenCalled();
   });
 
@@ -90,6 +98,7 @@ describe('ensureImage', () => {
 
     await ensureImage();
 
+    expect(mockCopyFile).toHaveBeenCalledTimes(1);
     expect(mockBuildImage).toHaveBeenCalledTimes(1);
     expect(mockStoreHash).toHaveBeenCalledWith('abc123');
   });
@@ -115,18 +124,17 @@ describe('executeRun', () => {
   beforeEach(() => {
     mockIsDockerAvailable.mockResolvedValue(true);
     mockNeedsRebuild.mockResolvedValue(false);
+    mockCopyFile.mockResolvedValue(undefined as never);
     mockMkdtemp.mockResolvedValue('/tmp/agent-harness-xyz' as never);
     mockRm.mockResolvedValue(undefined as never);
     mockWriteFile.mockResolvedValue(undefined as never);
     mockCleanupIpcFiles.mockResolvedValue(undefined);
+    mockLoadToken.mockResolvedValue('sk-ant-oat01-testtoken');
   });
 
-  it('should spawn container and return output', async () => {
+  it('should spawn container with prompt file and token env var', async () => {
     mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({ exitCode: 0 }));
-    // First readFile call: settings.json, second: output file
-    mockReadFile
-      .mockResolvedValueOnce('{"hooks":{}}' as never)
-      .mockResolvedValueOnce('Agent output here' as never);
+    mockReadFile.mockResolvedValueOnce('Agent output here' as never);
 
     const result = await executeRun('hello');
 
@@ -136,55 +144,48 @@ describe('executeRun', () => {
 
     const callArgs = mockSpawnContainer.mock.calls[0][0];
     expect(callArgs.image).toBe('agent-harness:latest');
-    expect(callArgs.command[0]).toBe('sh');
-    expect(callArgs.command[1]).toBe('-c');
-    expect(callArgs.command[2]).toContain('cp /tmp/output/settings.json');
-    expect(callArgs.command[2]).toContain('claude');
-    expect(callArgs.command[2]).toContain('--dangerously-skip-permissions');
-    expect(callArgs.command[2]).toContain('hello');
-    expect(callArgs.volumes).toHaveLength(2);
+    expect(callArgs.command).toEqual([
+      'node',
+      '/opt/agent-harness/agent-runner.js',
+    ]);
+    expect(callArgs.env).toEqual({
+      PROMPT_FILE: '/tmp/output/prompt.txt',
+      OUTPUT_FILE: '/tmp/output/result.txt',
+      CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-testtoken',
+    });
+    expect(callArgs.volumes).toHaveLength(1);
+    expect(callArgs.volumes![0].host).toBe('/tmp/agent-harness-xyz');
     expect(callArgs.capAdd).toEqual(['NET_ADMIN', 'NET_RAW']);
   });
 
-  it('should copy settings.json via command instead of file mount', async () => {
+  it('should write prompt to temp dir', async () => {
     mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
-    mockReadFile
-      .mockResolvedValueOnce('{"hooks":{}}' as never)
-      .mockResolvedValueOnce('output' as never);
+    mockReadFile.mockResolvedValueOnce('output' as never);
+
+    await executeRun('my test prompt');
+
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/tmp/agent-harness-xyz/prompt.txt',
+      'my test prompt',
+    );
+  });
+
+  it('should not mount ~/.claude directory', async () => {
+    mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
+    mockReadFile.mockResolvedValueOnce('output' as never);
 
     await executeRun('hello');
 
     const callArgs = mockSpawnContainer.mock.calls[0][0];
-    // No file-level mount for settings.json
-    const settingsMount = callArgs.volumes?.find((v: { container: string }) =>
-      v.container.includes('settings.json'),
+    const claudeMount = callArgs.volumes?.find((v: { container: string }) =>
+      v.container.includes('.claude'),
     );
-    expect(settingsMount).toBeUndefined();
-    // Settings copy is in the command
-    expect(callArgs.command[2]).toContain(
-      'cp /tmp/output/settings.json /home/node/.claude/settings.json',
-    );
-  });
-
-  it('should write settings.json to temp dir', async () => {
-    mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
-    mockReadFile
-      .mockResolvedValueOnce('{"hooks":{"PermissionRequest":[]}}' as never)
-      .mockResolvedValueOnce('output' as never);
-
-    await executeRun('hello');
-
-    expect(mockWriteFile).toHaveBeenCalledWith(
-      '/tmp/agent-harness-xyz/settings.json',
-      '{"hooks":{"PermissionRequest":[]}}',
-    );
+    expect(claudeMount).toBeUndefined();
   });
 
   it('should clean up IPC files and temp dir', async () => {
     mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
-    mockReadFile
-      .mockResolvedValueOnce('{}' as never)
-      .mockResolvedValueOnce('output' as never);
+    mockReadFile.mockResolvedValueOnce('output' as never);
 
     await executeRun('hello');
 
@@ -196,7 +197,6 @@ describe('executeRun', () => {
   });
 
   it('should clean up temp dir even on failure', async () => {
-    mockReadFile.mockResolvedValueOnce('{}' as never);
     mockSpawnContainer.mockImplementationOnce(() => {
       throw new Error('container failed');
     });
@@ -212,9 +212,7 @@ describe('executeRun', () => {
     mockSpawnContainer.mockReturnValueOnce(
       makeSpawnResult({ exitCode: 1, stderr: 'something went wrong' }),
     );
-    mockReadFile
-      .mockResolvedValueOnce('{}' as never)
-      .mockRejectedValueOnce(new Error('ENOENT') as never);
+    mockReadFile.mockRejectedValueOnce(new Error('ENOENT') as never);
 
     const result = await executeRun('hello');
     expect(result.exitCode).toBe(1);
@@ -225,9 +223,7 @@ describe('executeRun', () => {
     mockSpawnContainer.mockReturnValueOnce(
       makeSpawnResult({ stdout: 'stdout output' }),
     );
-    mockReadFile
-      .mockResolvedValueOnce('{}' as never)
-      .mockRejectedValueOnce(new Error('ENOENT') as never);
+    mockReadFile.mockRejectedValueOnce(new Error('ENOENT') as never);
 
     const result = await executeRun('hello');
     expect(result.output).toBe('stdout output');
@@ -242,9 +238,7 @@ describe('executeRun', () => {
 
   it('should pass onQuestion handler that writes answers', async () => {
     mockSpawnContainer.mockReturnValueOnce(makeSpawnResult({}));
-    mockReadFile
-      .mockResolvedValueOnce('{}' as never)
-      .mockResolvedValueOnce('output' as never);
+    mockReadFile.mockResolvedValueOnce('output' as never);
 
     const onQuestion = vi.fn().mockResolvedValue({
       id: 'q1',
@@ -253,38 +247,16 @@ describe('executeRun', () => {
 
     await executeRun('hello', onQuestion);
 
-    // The question handler is set up but since pollForQuestions is mocked
-    // and returns nothing by default, onQuestion won't be called
-    // The full integration of polling is tested in ipc.test.ts
     expect(mockSpawnContainer).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('executeLogin', () => {
-  beforeEach(() => {
-    mockIsDockerAvailable.mockResolvedValue(true);
-    mockNeedsRebuild.mockResolvedValue(false);
-  });
-
-  it('should run interactive container with credentials mounted', async () => {
-    mockRunInteractiveContainer.mockResolvedValueOnce({ exitCode: 0 });
+  it('should call extractAndSaveToken', async () => {
+    mockExtractAndSaveToken.mockResolvedValueOnce(undefined);
 
     await executeLogin();
 
-    expect(mockRunInteractiveContainer).toHaveBeenCalledTimes(1);
-    const callArgs = mockRunInteractiveContainer.mock.calls[0][0];
-    expect(callArgs.command).toEqual(['/bin/bash']);
-    expect(callArgs.volumes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ container: '/home/node/.claude' }),
-      ]),
-    );
-  });
-
-  it('should throw on non-zero exit', async () => {
-    mockRunInteractiveContainer.mockResolvedValueOnce({ exitCode: 1 });
-    await expect(executeLogin()).rejects.toThrow(
-      'Login session exited with code 1',
-    );
+    expect(mockExtractAndSaveToken).toHaveBeenCalledTimes(1);
   });
 });

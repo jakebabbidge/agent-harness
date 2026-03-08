@@ -25,14 +25,14 @@ Agent Harness is a CLI application composed of five major subsystems: a CLI laye
 1. User issues CLI command -> CLI parses and routes to appropriate subsystem
 2. Prompt engine loads template from `~/.agent-harness/`, substitutes variables, produces rendered prompt
 3. Execution engine creates isolated environment (Docker container with shared temp dir), passes prompt to agent adapter
-4. In-container Claude Code hook intercepts `AskUserQuestion` -> writes question JSON to shared dir -> host polls and prompts user -> writes answer JSON -> hook reads answer and responds
+4. In-container Agent SDK runtime's programmatic hook intercepts `AskUserQuestion` -> writes question JSON to shared dir -> host polls and prompts user -> writes answer JSON -> hook reads answer and denies tool call with answer
 5. Container exits -> execution engine reads output and cleans up
 6. Workflow engine reads YAML definition, determines next node, invokes execution engine for each step, routes outputs to subsequent nodes
 
 ## External integrations
 
 - Docker: container lifecycle management for isolated agent execution
-- Claude Code CLI: first agent backend (via OAuth login)
+- `@anthropic-ai/claude-agent-sdk`: first agent backend (via OAuth token)
 - Git: repo isolation via worktrees or directory copies
 
 ## Domain links
