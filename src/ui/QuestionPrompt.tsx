@@ -36,38 +36,6 @@ export function QuestionPrompt({ question, onAnswer }: QuestionPromptProps) {
   return <FreeTextInput item={currentItem} onSubmit={handleItemAnswer} />;
 }
 
-// --- Free text input (shared by all modes) ---
-
-function TextEntry({
-  prompt,
-  onSubmit,
-}: {
-  prompt: string;
-  onSubmit: (value: string) => void;
-}) {
-  const [value, setValue] = useState('');
-
-  useInput((input, key) => {
-    if (key.return) {
-      if (value.trim()) {
-        onSubmit(value);
-      }
-    } else if (key.backspace || key.delete) {
-      setValue((v) => v.slice(0, -1));
-    } else if (!key.ctrl && !key.meta && input) {
-      setValue((v) => v + input);
-    }
-  });
-
-  return (
-    <Box>
-      <Text color="cyan">{prompt} </Text>
-      <Text>{value}</Text>
-      <Text dimColor>█</Text>
-    </Box>
-  );
-}
-
 // --- Single select ---
 
 interface SingleSelectInputProps {
@@ -80,40 +48,46 @@ function SingleSelectInput({ item, onSubmit }: SingleSelectInputProps) {
   const otherIndex = options.length;
   const totalItems = options.length + 1;
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [mode, setMode] = useState<'select' | 'custom'>('select');
+  const [customText, setCustomText] = useState('');
 
-  useInput(
-    (input, key) => {
+  const onOtherRow = selectedIndex === otherIndex;
+
+  useInput((input, key) => {
+    if (onOtherRow) {
+      if (key.return) {
+        if (customText.trim()) {
+          onSubmit(customText);
+        }
+        return;
+      }
       if (key.upArrow) {
         setSelectedIndex((i) => Math.max(0, i - 1));
-      } else if (key.downArrow) {
-        setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
-      } else if (key.return) {
-        if (selectedIndex === otherIndex) {
-          setMode('custom');
-        } else {
-          onSubmit(options[selectedIndex].label);
-        }
+        return;
       }
-      const num = parseInt(input, 10);
-      if (num >= 1 && num <= options.length) {
-        onSubmit(options[num - 1].label);
-      } else if (num === totalItems) {
-        setMode('custom');
+      if (key.backspace || key.delete) {
+        setCustomText((v) => v.slice(0, -1));
+        return;
       }
-    },
-    { isActive: mode === 'select' },
-  );
+      if (!key.ctrl && !key.meta && !key.downArrow && input) {
+        setCustomText((v) => v + input);
+      }
+      return;
+    }
 
-  if (mode === 'custom') {
-    return (
-      <Box flexDirection="column">
-        {item.header && <Text color="cyan">[{item.header}]</Text>}
-        <Text bold>{item.question}</Text>
-        <TextEntry prompt="Enter your answer:" onSubmit={onSubmit} />
-      </Box>
-    );
-  }
+    if (key.upArrow) {
+      setSelectedIndex((i) => Math.max(0, i - 1));
+    } else if (key.downArrow) {
+      setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
+    } else if (key.return) {
+      onSubmit(options[selectedIndex].label);
+    }
+    const num = parseInt(input, 10);
+    if (num >= 1 && num <= options.length) {
+      onSubmit(options[num - 1].label);
+    } else if (num === totalItems) {
+      setSelectedIndex(otherIndex);
+    }
+  });
 
   return (
     <Box flexDirection="column">
@@ -128,12 +102,25 @@ function SingleSelectInput({ item, onSubmit }: SingleSelectInputProps) {
         </Box>
       ))}
       <Box>
-        <Text color={selectedIndex === otherIndex ? 'cyan' : undefined}>
-          {selectedIndex === otherIndex ? '❯' : ' '} {totalItems}.{' '}
+        <Text color={onOtherRow ? 'cyan' : undefined}>
+          {onOtherRow ? '❯' : ' '} {totalItems}.{' '}
         </Text>
-        <Text dimColor>Other (type your own)</Text>
+        {onOtherRow && customText ? (
+          <>
+            <Text>{customText}</Text>
+            <Text dimColor>█</Text>
+          </>
+        ) : (
+          <Text dimColor>
+            {onOtherRow ? 'Type your answer…█' : 'Other (type your own)'}
+          </Text>
+        )}
       </Box>
-      <Text dimColor>Use arrow keys and Enter to select</Text>
+      <Text dimColor>
+        {onOtherRow
+          ? 'Type your answer, Enter to submit'
+          : 'Use arrow keys and Enter to select'}
+      </Text>
     </Box>
   );
 }
@@ -152,54 +139,63 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [toggled, setToggled] = useState<Set<number>>(new Set());
   const [customAnswers, setCustomAnswers] = useState<string[]>([]);
-  const [mode, setMode] = useState<'select' | 'custom'>('select');
+  const [customText, setCustomText] = useState('');
 
-  useInput(
-    (_input, key) => {
+  const onCustomRow = selectedIndex === customIndex;
+
+  useInput((_input, key) => {
+    if (onCustomRow) {
+      if (key.return) {
+        // Enter on custom row with text: add the custom entry
+        if (customText.trim()) {
+          setCustomAnswers((prev) => [...prev, customText.trim()]);
+          setCustomText('');
+          return;
+        }
+        // Enter on custom row with no text: confirm selection (if any)
+        if (toggled.size > 0 || customAnswers.length > 0) {
+          const labels = [...toggled].sort().map((i) => options[i].label);
+          const all = [...labels, ...customAnswers];
+          onSubmit(all.join(', '));
+        }
+        return;
+      }
       if (key.upArrow) {
         setSelectedIndex((i) => Math.max(0, i - 1));
-      } else if (key.downArrow) {
-        setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
-      } else if (key.return) {
-        if (toggled.size === 0 && customAnswers.length === 0) return;
-        const labels = [...toggled].sort().map((i) => options[i].label);
-        const all = [...labels, ...customAnswers];
-        onSubmit(all.join(', '));
+        return;
       }
-      if (_input === ' ') {
-        if (selectedIndex === customIndex) {
-          setMode('custom');
-        } else {
-          setToggled((prev) => {
-            const next = new Set(prev);
-            if (next.has(selectedIndex)) {
-              next.delete(selectedIndex);
-            } else {
-              next.add(selectedIndex);
-            }
-            return next;
-          });
-        }
+      if (key.backspace || key.delete) {
+        setCustomText((v) => v.slice(0, -1));
+        return;
       }
-    },
-    { isActive: mode === 'select' },
-  );
+      if (!key.ctrl && !key.meta && !key.downArrow && _input) {
+        setCustomText((v) => v + _input);
+      }
+      return;
+    }
 
-  if (mode === 'custom') {
-    return (
-      <Box flexDirection="column">
-        {item.header && <Text color="cyan">[{item.header}]</Text>}
-        <Text bold>{item.question}</Text>
-        <TextEntry
-          prompt="Enter custom option:"
-          onSubmit={(value) => {
-            setCustomAnswers((prev) => [...prev, value.trim()]);
-            setMode('select');
-          }}
-        />
-      </Box>
-    );
-  }
+    if (key.upArrow) {
+      setSelectedIndex((i) => Math.max(0, i - 1));
+    } else if (key.downArrow) {
+      setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
+    } else if (key.return) {
+      if (toggled.size === 0 && customAnswers.length === 0) return;
+      const labels = [...toggled].sort().map((i) => options[i].label);
+      const all = [...labels, ...customAnswers];
+      onSubmit(all.join(', '));
+    }
+    if (_input === ' ') {
+      setToggled((prev) => {
+        const next = new Set(prev);
+        if (next.has(selectedIndex)) {
+          next.delete(selectedIndex);
+        } else {
+          next.add(selectedIndex);
+        }
+        return next;
+      });
+    }
+  });
 
   return (
     <Box flexDirection="column">
@@ -216,10 +212,19 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
         </Box>
       ))}
       <Box>
-        <Text color={selectedIndex === customIndex ? 'cyan' : undefined}>
-          {selectedIndex === customIndex ? '❯' : ' '}{' '}
+        <Text color={onCustomRow ? 'cyan' : undefined}>
+          {onCustomRow ? '❯' : ' '}{' '}
         </Text>
-        <Text dimColor>Add custom option</Text>
+        {onCustomRow && customText ? (
+          <>
+            <Text>{customText}</Text>
+            <Text dimColor>█</Text>
+          </>
+        ) : (
+          <Text dimColor>
+            {onCustomRow ? 'Type to add custom option…█' : 'Add custom option'}
+          </Text>
+        )}
       </Box>
       {customAnswers.map((c) => (
         <Box key={c} marginLeft={4}>
@@ -228,7 +233,9 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
         </Box>
       ))}
       <Text dimColor>
-        Space to toggle, Enter to confirm (select at least one)
+        {onCustomRow
+          ? 'Type and Enter to add, Enter again to confirm'
+          : 'Space to toggle, Enter to confirm (select at least one)'}
       </Text>
     </Box>
   );
@@ -242,11 +249,29 @@ interface FreeTextInputProps {
 }
 
 function FreeTextInput({ item, onSubmit }: FreeTextInputProps) {
+  const [value, setValue] = useState('');
+
+  useInput((input, key) => {
+    if (key.return) {
+      if (value.trim()) {
+        onSubmit(value);
+      }
+    } else if (key.backspace || key.delete) {
+      setValue((v) => v.slice(0, -1));
+    } else if (!key.ctrl && !key.meta && input) {
+      setValue((v) => v + input);
+    }
+  });
+
   return (
     <Box flexDirection="column">
       {item.header && <Text color="cyan">[{item.header}]</Text>}
       <Text bold>{item.question}</Text>
-      <TextEntry prompt="&gt;" onSubmit={onSubmit} />
+      <Box>
+        <Text color="cyan">&gt; </Text>
+        <Text>{value}</Text>
+        <Text dimColor>█</Text>
+      </Box>
     </Box>
   );
 }
