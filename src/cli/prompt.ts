@@ -1,9 +1,9 @@
 import { createInterface } from 'node:readline';
 import type {
-  Question,
-  QuestionAnswer,
+  QuestionMessage,
+  AnswerMessage,
   QuestionItem,
-} from '../execution/ipc.js';
+} from '../messages.js';
 
 const CYAN = '\x1b[36m';
 const BOLD = '\x1b[1m';
@@ -12,8 +12,8 @@ const GREEN = '\x1b[32m';
 const RESET = '\x1b[0m';
 
 export async function promptUserForAnswer(
-  question: Question,
-): Promise<QuestionAnswer> {
+  question: QuestionMessage,
+): Promise<AnswerMessage> {
   const answers: Record<string, string> = {};
 
   for (const q of question.questions) {
@@ -33,7 +33,7 @@ export async function promptUserForAnswer(
     }
   }
 
-  return { id: question.id, answers };
+  return { type: 'answer', id: question.id, answers };
 }
 
 async function promptSingleSelect(q: QuestionItem): Promise<string> {
@@ -147,6 +147,11 @@ function readLine(prompt: string): Promise<string> {
     });
     rl.question(prompt, (answer) => {
       rl.close();
+      // Pause stdin so it no longer holds the event loop open.
+      // createInterface resumes (flows) stdin; closing the readline
+      // removes its listener but leaves stdin in flowing mode, which
+      // prevents the process from exiting.
+      process.stdin.pause();
       process.stdin.unref();
       resolve(answer);
     });

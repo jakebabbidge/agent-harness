@@ -1,6 +1,6 @@
-import { mkdtemp, readFile, rm, writeFile, copyFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir, homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import {
   isDockerAvailable,
@@ -9,22 +9,20 @@ import {
   runInteractiveContainer,
 } from './docker.js';
 import { needsRebuild, computeContextHash, storeHash } from './image-hash.js';
+import { sendMessage, readMessages } from './stdio-stream.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
-import {
-  pollForQuestions,
-  writeAnswer,
-  cleanupIpcFiles,
-  type Question,
-  type QuestionAnswer,
-} from './ipc.js';
+import type {
+  QuestionMessage,
+  AnswerMessage,
+  MessageHandler,
+} from '../messages.js';
 
 const IMAGE_TAG = 'agent-harness:latest';
-const CONTAINER_OUTPUT_DIR = '/tmp/output';
-const OUTPUT_FILENAME = 'result.txt';
-const PROMPT_FILENAME = 'prompt.txt';
 const CLAUDE_CONFIG_CONTAINER_PATH = '/home/node/.claude';
 
-export type QuestionHandler = (question: Question) => Promise<QuestionAnswer>;
+export type QuestionHandler = (
+  question: QuestionMessage,
+) => Promise<AnswerMessage>;
 
 function getDockerContextPath(): string {
   const currentDir = fileURLToPath(new URL('.', import.meta.url));
@@ -33,12 +31,15 @@ function getDockerContextPath(): string {
 
 function getProjectRoot(): string {
   const currentDir = fileURLToPath(new URL('.', import.meta.url));
-  // Works from both src/execution/ (tsx) and dist/execution/ (node)
   return join(currentDir, '..', '..');
 }
 
 function getDistRuntimePath(): string {
   return join(getProjectRoot(), 'dist', 'runtime', 'agent-runner.js');
+}
+
+function getDistMessagesPath(): string {
+  return join(getProjectRoot(), 'dist', 'messages.js');
 }
 
 export async function assertDockerAvailable(): Promise<void> {
@@ -53,10 +54,14 @@ export async function assertDockerAvailable(): Promise<void> {
 export async function ensureImage(): Promise<void> {
   const contextPath = getDockerContextPath();
 
-  // Copy compiled runtime into docker context before build
+  // Copy compiled runtime and messages into docker context before build
   const runtimeSrc = getDistRuntimePath();
   const runtimeDst = join(contextPath, 'agent-runner.js');
   await copyFile(runtimeSrc, runtimeDst);
+
+  const messagesSrc = getDistMessagesPath();
+  const messagesDst = join(contextPath, 'messages.js');
+  await copyFile(messagesSrc, messagesDst);
 
   const rebuild = await needsRebuild(contextPath);
 
@@ -69,51 +74,33 @@ export async function ensureImage(): Promise<void> {
   await storeHash(hash);
 }
 
+const CONTAINER_LOG_DIR = '/tmp/agent-log';
+const RAW_LOG_FILENAME = 'raw.jsonl';
+const CONTAINER_SHUTDOWN_TIMEOUT_MS = 5000;
+
 export interface RunResult {
   output: string;
   stderr: string;
   exitCode: number;
-}
-
-async function handleQuestions(
-  dir: string,
-  signal: AbortSignal,
-  onQuestion?: QuestionHandler,
-): Promise<void> {
-  if (!onQuestion) return;
-
-  for await (const question of pollForQuestions(dir, signal)) {
-    try {
-      const answer = await onQuestion(question);
-      await writeAnswer(dir, answer);
-    } catch {
-      // If the user handler fails, skip the question (hook will timeout and fallback)
-    }
-  }
+  rawLogPath?: string;
 }
 
 export async function executeRun(
   prompt: string,
   onQuestion?: QuestionHandler,
+  onMessage?: MessageHandler,
 ): Promise<RunResult> {
   await assertDockerAvailable();
   await ensureImage();
 
   const adapter = new ClaudeCodeAdapter();
-  const tempDir = await mkdtemp(join(tmpdir(), 'agent-harness-'));
-  const outputPathInContainer = join(CONTAINER_OUTPUT_DIR, OUTPUT_FILENAME);
-  const promptPathInContainer = join(CONTAINER_OUTPUT_DIR, PROMPT_FILENAME);
+  const command = adapter.buildCommand();
+
+  const logDir = await mkdtemp(join(tmpdir(), 'agent-harness-log-'));
+  const rawLogPathInContainer = join(CONTAINER_LOG_DIR, RAW_LOG_FILENAME);
 
   try {
-    // Write prompt to temp dir
-    await writeFile(join(tempDir, PROMPT_FILENAME), prompt);
-
-    const command = adapter.buildCommand({
-      promptPath: promptPathInContainer,
-      outputPath: outputPathInContainer,
-    });
-
-    const { done } = spawnContainer({
+    const { child, stdin, stdout, done } = spawnContainer({
       image: IMAGE_TAG,
       command,
       volumes: [
@@ -121,40 +108,78 @@ export async function executeRun(
           host: join(homedir(), '.claude'),
           container: CLAUDE_CONFIG_CONTAINER_PATH,
         },
-        { host: tempDir, container: CONTAINER_OUTPUT_DIR },
+        { host: logDir, container: CONTAINER_LOG_DIR },
       ],
       capAdd: ['NET_ADMIN', 'NET_RAW'],
       env: {
-        PROMPT_FILE: promptPathInContainer,
-        OUTPUT_FILE: outputPathInContainer,
+        AGENT_RAW_LOG: rawLogPathInContainer,
       },
     });
 
-    // Poll for questions while container runs
-    const abortController = new AbortController();
-    const questionLoop = handleQuestions(
-      tempDir,
-      abortController.signal,
-      onQuestion,
-    );
-
-    // Wait for container to finish
-    const { exitCode, stdout, stderr } = await done;
-    abortController.abort();
-    await questionLoop;
+    // Send prompt to container
+    sendMessage(stdin, { type: 'prompt', prompt });
 
     let output = '';
-    try {
-      output = await readFile(join(tempDir, OUTPUT_FILENAME), 'utf-8');
-    } catch {
-      // No output file — fall back to container stdout
-      output = stdout || (exitCode === 0 ? '(no output produced)' : '');
+
+    // Read messages from container stdout
+    for await (const message of readMessages(stdout)) {
+      if (message.type === 'question' && onQuestion) {
+        try {
+          const answer = await onQuestion(message);
+          sendMessage(stdin, answer);
+        } catch {
+          // If the user handler fails, skip (agent will timeout and fallback)
+        }
+      } else if (message.type === 'result') {
+        output = message.result;
+      } else if (message.type === 'error') {
+        output = output || message.error;
+      }
+
+      if (onMessage) {
+        onMessage(message);
+      }
+
+      if (message.type === 'result' || message.type === 'error') {
+        break;
+      }
     }
 
-    return { output, stderr, exitCode };
-  } finally {
-    await cleanupIpcFiles(tempDir);
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    // Destroy stdout to release the stream — without this, any unread
+    // buffered data keeps the Readable open, which prevents the
+    // ChildProcess 'close' event from firing (it waits for all stdio
+    // streams to close).
+    stdout.destroy();
+
+    // Close stdin so the container process can exit gracefully
+    stdin.end();
+
+    // Wait for container to exit, kill if it doesn't shut down in time
+    const killTimer = setTimeout(
+      () => child.kill(),
+      CONTAINER_SHUTDOWN_TIMEOUT_MS,
+    );
+    const { exitCode, stderr } = await done;
+    clearTimeout(killTimer);
+
+    if (!output && exitCode === 0) {
+      output = '(no output produced)';
+    }
+
+    // Check if raw log was produced
+    const hostLogPath = join(logDir, RAW_LOG_FILENAME);
+    let rawLogPath: string | undefined;
+    try {
+      await readFile(hostLogPath);
+      rawLogPath = hostLogPath;
+    } catch {
+      // No log file produced
+    }
+
+    return { output, stderr, exitCode, rawLogPath };
+  } catch (err) {
+    await rm(logDir, { recursive: true, force: true }).catch(() => {});
+    throw err;
   }
 }
 

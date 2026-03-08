@@ -1,84 +1,165 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { writeFileSync, readFileSync, renameSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import { randomUUID } from 'node:crypto';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { query, type CanUseTool } from '@anthropic-ai/claude-agent-sdk';
+import {
+  serialize,
+  parseInboundLine,
+  type OutboundMessage,
+  type InboundMessage,
+} from '../messages.js';
 
-const IPC_DIR = '/tmp/output';
-const POLL_INTERVAL_MS = 500;
-const TIMEOUT_MS = 5 * 60 * 1000;
+let rawLogPath: string | null = null;
 
-function writeAtomic(filePath: string, data: string): void {
-  const tmp = filePath + '.tmp';
-  writeFileSync(tmp, data, 'utf-8');
-  renameSync(tmp, filePath);
+export function initRawLog(path: string): void {
+  rawLogPath = path;
+  writeFileSync(path, '', 'utf-8');
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function logRawMessage(message: unknown): void {
+  if (rawLogPath) {
+    appendFileSync(rawLogPath, JSON.stringify(message) + '\n', 'utf-8');
+  }
 }
 
-export function createCanUseTool(ipcDir: string): CanUseTool {
+function emit(message: OutboundMessage): void {
+  process.stdout.write(serialize(message));
+}
+
+type PendingAnswer = {
+  resolve: (answers: Record<string, string>) => void;
+};
+
+const pendingAnswers = new Map<string, PendingAnswer>();
+
+function handleInbound(message: InboundMessage): void {
+  if (message.type === 'answer') {
+    const pending = pendingAnswers.get(message.id);
+    if (pending) {
+      pendingAnswers.delete(message.id);
+      pending.resolve(message.answers);
+    }
+  }
+}
+
+export function createCanUseTool(): CanUseTool {
   return async (toolName, input) => {
     if (toolName !== 'AskUserQuestion') {
       return { behavior: 'allow' };
     }
 
-    const questions =
-      (input.questions as Array<{ question: string }>) ?? [];
+    const questions = (input.questions as Array<{ question: string }>) ?? [];
     const id = randomUUID();
 
-    const questionFile = join(ipcDir, `question-${id}.json`);
-    writeAtomic(questionFile, JSON.stringify({ id, questions }));
+    emit({ type: 'question', id, questions });
 
-    const answerFile = join(ipcDir, `answer-${id}.json`);
-    const deadline = Date.now() + TIMEOUT_MS;
+    const answers = await new Promise<Record<string, string>>((resolve) => {
+      pendingAnswers.set(id, { resolve });
+    });
 
-    while (Date.now() < deadline) {
-      await sleep(POLL_INTERVAL_MS);
-      if (existsSync(answerFile)) {
-        const raw = readFileSync(answerFile, 'utf-8');
-        const answer = JSON.parse(raw) as { answers: Record<string, string> };
-        return {
-          behavior: 'allow',
-          updatedInput: { ...input, answers: answer.answers },
-        };
-      }
-    }
-
-    return { behavior: 'allow' };
+    return {
+      behavior: 'allow',
+      updatedInput: { ...input, answers },
+    };
   };
 }
 
 async function main(): Promise<void> {
-  const promptFile = process.env['PROMPT_FILE'];
-  const outputFile = process.env['OUTPUT_FILE'];
+  const rl = createInterface({
+    input: process.stdin,
+    crlfDelay: Infinity,
+  });
 
-  if (!promptFile || !outputFile) {
-    console.error(
-      'PROMPT_FILE and OUTPUT_FILE environment variables are required',
-    );
+  // Wait for prompt message, then continue dispatching answers.
+  // We use event-based listening throughout — breaking out of
+  // `for await (... of rl)` closes the readline, which would
+  // silently kill all subsequent line delivery.
+  const prompt = await new Promise<string>((resolve) => {
+    const onLine = (line: string) => {
+      const msg = parseInboundLine(line.trim());
+      if (!msg) return;
+
+      if (msg.type === 'prompt') {
+        rl.off('line', onLine);
+        resolve(msg.prompt);
+      }
+    };
+    rl.on('line', onLine);
+    rl.on('close', () => {
+      // stdin closed before we got a prompt — handled below
+    });
+  });
+
+  if (!prompt) {
+    emit({ type: 'error', error: 'No prompt message received on stdin' });
     process.exit(1);
   }
 
-  const prompt = await readFile(promptFile, 'utf-8');
-
-  let result = '';
-
-  for await (const message of query({
-    prompt,
-    options: {
-      permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true,
-      canUseTool: createCanUseTool(IPC_DIR),
-    },
-  })) {
-    if ('result' in message) {
-      result = message.result as string;
-    }
+  const debugLog = process.env['AGENT_RAW_LOG'];
+  if (debugLog) {
+    initRawLog(debugLog);
   }
 
-  await writeFile(outputFile, result, 'utf-8');
+  // Continue listening for answer messages in background
+  rl.on('line', (line) => {
+    const msg = parseInboundLine(line.trim());
+    if (msg) handleInbound(msg);
+  });
+
+  try {
+    let result = '';
+
+    for await (const message of query({
+      prompt,
+      options: {
+        permissionMode: 'bypassPermissions',
+        allowDangerouslySkipPermissions: true,
+        canUseTool: createCanUseTool(),
+      },
+    })) {
+      logRawMessage(message);
+
+      if ('result' in message) {
+        result = message.result as string;
+      } else if ('message' in message) {
+        const sdkMessage = message.message as {
+          role?: string;
+          content?: Array<{
+            type: string;
+            thinking?: string;
+            text?: string;
+            name?: string;
+            input?: Record<string, unknown>;
+          }>;
+        };
+        if (
+          sdkMessage.role === 'assistant' &&
+          Array.isArray(sdkMessage.content)
+        ) {
+          for (const block of sdkMessage.content) {
+            if (block.type === 'thinking' && block.thinking) {
+              emit({ type: 'thinking', content: block.thinking });
+            } else if (block.type === 'tool_use' && block.name) {
+              emit({
+                type: 'tool_use',
+                name: block.name,
+                input: block.input ?? {},
+              });
+            }
+          }
+        }
+      }
+    }
+
+    emit({ type: 'result', result });
+    process.exit(0);
+  } catch (err) {
+    emit({
+      type: 'error',
+      error: err instanceof Error ? err.message : String(err),
+    });
+    process.exit(1);
+  }
 }
 
 // Only run main when executed directly (not imported by tests)

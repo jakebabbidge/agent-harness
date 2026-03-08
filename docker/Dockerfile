@@ -13,8 +13,9 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 COPY init-firewall.sh /usr/local/bin/init-firewall.sh
 RUN chmod +x /usr/local/bin/init-firewall.sh
 
-# Copy compiled runtime and set up as ESM package with local SDK dependency
-COPY agent-runner.js /opt/agent-harness/agent-runner.js
+# Copy compiled runtime and messages module, set up as ESM package with local SDK dependency
+COPY agent-runner.js /opt/agent-harness/runtime/agent-runner.js
+COPY messages.js /opt/agent-harness/messages.js
 RUN echo '{"type":"module"}' > /opt/agent-harness/package.json && \
     cd /opt/agent-harness && npm install @anthropic-ai/claude-agent-sdk@${AGENT_SDK_VERSION}
 

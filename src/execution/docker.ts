@@ -1,5 +1,6 @@
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
+import type { Writable, Readable } from 'node:stream';
 
 const execFileAsync = promisify(execFile);
 
@@ -100,11 +101,13 @@ export async function runContainer(
 
 export interface SpawnedContainer {
   child: ChildProcess;
-  done: Promise<{ exitCode: number; stdout: string; stderr: string }>;
+  stdin: Writable;
+  stdout: Readable;
+  done: Promise<{ exitCode: number; stderr: string }>;
 }
 
 export function spawnContainer(options: DockerRunOptions): SpawnedContainer {
-  const args = ['run', '--rm'];
+  const args = ['run', '--rm', '-i'];
 
   if (options.volumes) {
     for (const vol of options.volumes) {
@@ -127,31 +130,26 @@ export function spawnContainer(options: DockerRunOptions): SpawnedContainer {
   args.push(options.image, ...options.command);
 
   const child = spawn('docker', args, {
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['pipe', 'pipe', 'pipe'],
   });
 
-  const stdoutChunks: Buffer[] = [];
   const stderrChunks: Buffer[] = [];
-
-  child.stdout!.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
   child.stderr!.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
 
   const done = new Promise<{
     exitCode: number;
-    stdout: string;
     stderr: string;
   }>((resolve, reject) => {
     child.on('error', reject);
     child.on('close', (code) => {
       resolve({
         exitCode: code ?? 1,
-        stdout: Buffer.concat(stdoutChunks).toString('utf-8'),
         stderr: Buffer.concat(stderrChunks).toString('utf-8'),
       });
     });
   });
 
-  return { child, done };
+  return { child, stdin: child.stdin!, stdout: child.stdout!, done };
 }
 
 export function runInteractiveContainer(

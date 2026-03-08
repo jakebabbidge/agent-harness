@@ -6,6 +6,27 @@ import {
 } from '../execution/container-lifecycle.js';
 import { renderTemplate } from '../prompts/index.js';
 import { promptUserForAnswer } from './prompt.js';
+import type { OutboundMessage } from '../messages.js';
+
+const DIM = '\x1b[2m';
+const RESET = '\x1b[0m';
+
+function handleStreamMessage(message: OutboundMessage): void {
+  switch (message.type) {
+    case 'thinking':
+      process.stderr.write(`${DIM}${message.content}${RESET}\n`);
+      break;
+    case 'tool_use':
+      process.stderr.write(`${DIM}[tool: ${message.name}]${RESET}\n`);
+      break;
+    case 'result':
+      process.stderr.write(`${DIM}[result]${RESET}\n${message.result}\n`);
+      break;
+    case 'error':
+      process.stderr.write(`Error: ${message.error}\n`);
+      break;
+  }
+}
 
 const program = new Command();
 
@@ -48,9 +69,18 @@ program
           templatePath,
           variables: opts.var,
         });
-        const result = await executeRun(rendered, promptUserForAnswer);
+        const result = await executeRun(
+          rendered,
+          promptUserForAnswer,
+          handleStreamMessage,
+        );
         if (result.output.trim()) {
           console.log(result.output.trim());
+        }
+        if (result.rawLogPath) {
+          console.error(
+            `${DIM}Raw container log: ${result.rawLogPath}${RESET}`,
+          );
         }
         if (result.exitCode !== 0) {
           if (result.stderr) {

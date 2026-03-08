@@ -16,7 +16,7 @@ vi.mock('node:util', () => ({
 }));
 
 import { execFile, spawn } from 'node:child_process';
-import { EventEmitter, Readable } from 'node:stream';
+import { EventEmitter, Readable, Writable } from 'node:stream';
 
 const mockExecFile = vi.mocked(execFile) as unknown as ReturnType<typeof vi.fn>;
 const mockSpawn = vi.mocked(spawn) as unknown as ReturnType<typeof vi.fn>;
@@ -165,9 +165,15 @@ describe('runContainer', () => {
 
 function createMockChildProcess(stdoutData?: string, stderrData?: string) {
   const child = new EventEmitter() as EventEmitter & {
+    stdin: Writable;
     stdout: Readable;
     stderr: Readable;
   };
+  child.stdin = new Writable({
+    write(_chunk, _encoding, callback) {
+      callback();
+    },
+  });
   child.stdout = new Readable({
     read() {
       if (stdoutData) {
@@ -202,23 +208,27 @@ describe('spawnContainer', () => {
       expect.arrayContaining([
         'run',
         '--rm',
+        '-i',
         'agent-harness:latest',
         'sh',
         '-c',
         'echo hello',
       ]),
-      { stdio: ['ignore', 'pipe', 'pipe'] },
+      { stdio: ['pipe', 'pipe', 'pipe'] },
     );
   });
 
-  it('should resolve done promise with exit code and output', async () => {
+  it('should resolve done promise with exit code and stderr', async () => {
     const child = createMockChildProcess('hello', '');
     mockSpawn.mockReturnValueOnce(child);
 
-    const { done } = spawnContainer({
+    const { stdin, stdout, done } = spawnContainer({
       image: 'test',
       command: ['echo'],
     });
+
+    expect(stdin).toBeDefined();
+    expect(stdout).toBeDefined();
 
     // Allow streams to be consumed before emitting close
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -226,7 +236,6 @@ describe('spawnContainer', () => {
 
     const result = await done;
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('hello');
     expect(result.stderr).toBe('');
   });
 
@@ -261,7 +270,7 @@ describe('spawnContainer', () => {
   });
 
   it('should handle non-zero exit code', async () => {
-    const child = createMockChildProcess('', 'error');
+    const child = createMockChildProcess('', 'error output');
     mockSpawn.mockReturnValueOnce(child);
 
     const { done } = spawnContainer({
@@ -274,6 +283,6 @@ describe('spawnContainer', () => {
 
     const result = await done;
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toBe('error');
+    expect(result.stderr).toBe('error output');
   });
 });
