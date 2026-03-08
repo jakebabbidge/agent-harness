@@ -1,27 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createAskUserQuestionHook } from './agent-runner.js';
+import { createCanUseTool } from './agent-runner.js';
 import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { HookInput } from '@anthropic-ai/claude-agent-sdk';
-
-function makeHookInput(questions: Array<{ question: string }>): HookInput {
-  return {
-    session_id: 'test-session',
-    transcript_path: '/tmp/transcript',
-    cwd: '/tmp',
-    hook_event_name: 'PreToolUse',
-    tool_name: 'AskUserQuestion',
-    tool_input: { questions },
-    tool_use_id: 'test-tool-use-id',
-  } as HookInput;
-}
 
 const abortController = new AbortController();
-const hookOptions = { signal: abortController.signal };
+const canUseToolOptions = {
+  signal: abortController.signal,
+  toolUseID: 'test-tool-use-id',
+};
 
-describe('createAskUserQuestionHook', () => {
+describe('createCanUseTool', () => {
   let ipcDir: string;
 
   beforeEach(async () => {
@@ -32,14 +22,14 @@ describe('createAskUserQuestionHook', () => {
     await rm(ipcDir, { recursive: true, force: true });
   });
 
-  it('should write question file to IPC dir and return answer', async () => {
-    const hook = createAskUserQuestionHook(ipcDir);
+  it('should write question file and return allow with updatedInput', async () => {
+    const canUseTool = createCanUseTool(ipcDir);
 
     const questions = [{ question: 'Pick a color?' }];
-    const hookPromise = hook(
-      makeHookInput(questions),
-      'test-tool-use-id',
-      hookOptions,
+    const resultPromise = canUseTool(
+      'AskUserQuestion',
+      { questions },
+      canUseToolOptions,
     );
 
     // Wait for question file to appear
@@ -62,27 +52,23 @@ describe('createAskUserQuestionHook', () => {
       JSON.stringify({ answers: { 'Pick a color?': 'blue' } }),
     );
 
-    const result = await hookPromise;
+    const result = await resultPromise;
     expect(result).toEqual({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: expect.stringContaining('Pick a color?'),
+      behavior: 'allow',
+      updatedInput: {
+        questions,
+        answers: { 'Pick a color?': 'blue' },
       },
     });
-    expect(
-      (result as { hookSpecificOutput: { permissionDecisionReason: string } })
-        .hookSpecificOutput.permissionDecisionReason,
-    ).toContain('A: blue');
   });
 
   it('should handle empty questions array', async () => {
-    const hook = createAskUserQuestionHook(ipcDir);
+    const canUseTool = createCanUseTool(ipcDir);
 
-    const hookPromise = hook(
-      makeHookInput([]),
-      'test-tool-use-id',
-      hookOptions,
+    const resultPromise = canUseTool(
+      'AskUserQuestion',
+      { questions: [] },
+      canUseToolOptions,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -102,14 +88,29 @@ describe('createAskUserQuestionHook', () => {
       JSON.stringify({ answers: {} }),
     );
 
-    const result = await hookPromise;
+    const result = await resultPromise;
     expect(result).toEqual({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason:
-          'The user was asked and provided the following answers:',
+      behavior: 'allow',
+      updatedInput: {
+        questions: [],
+        answers: {},
       },
     });
+  });
+
+  it('should auto-approve non-AskUserQuestion tools', async () => {
+    const canUseTool = createCanUseTool(ipcDir);
+
+    const result = await canUseTool(
+      'Bash',
+      { command: 'ls' },
+      canUseToolOptions,
+    );
+
+    expect(result).toEqual({ behavior: 'allow' });
+
+    // No IPC files should have been written
+    const files = await readdir(ipcDir);
+    expect(files).toHaveLength(0);
   });
 });

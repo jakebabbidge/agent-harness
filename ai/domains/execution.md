@@ -28,7 +28,7 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 ## Key flows
 
 1. CLI requests task execution -> execution engine builds Docker image -> spawns container with shared temp dir
-2. Agent SDK runtime calls `AskUserQuestion` -> programmatic hook writes question JSON to shared dir -> host polls via `ipc.pollForQuestions()` -> invokes `QuestionHandler` callback -> writes answer JSON -> hook reads answer and denies tool call with answer in reason
+2. Agent SDK runtime calls `AskUserQuestion` -> `canUseTool` callback writes question JSON to shared dir -> host polls via `ipc.pollForQuestions()` -> invokes `QuestionHandler` callback -> writes answer JSON -> `canUseTool` reads answer and returns allow with `updatedInput` containing answers
 3. Container exits -> execution engine reads output file -> cleans up IPC files and temp dir
 
 ## Dependencies
@@ -47,5 +47,5 @@ Manages isolated agent runs. Creates sandboxed environments, runs agents inside 
 - Container lifecycle orchestration (executeRun, executeLogin, ensureImage): `src/execution/container-lifecycle.ts`
 - Docker image hash caching (rebuild detection): `src/execution/image-hash.ts`
 - File-based IPC (question polling, answer writing): `src/execution/ipc.ts`
-- In-container Agent SDK runtime (calls query(), hooks AskUserQuestion): `src/runtime/agent-runner.ts`
+- In-container Agent SDK runtime (calls query(), canUseTool for AskUserQuestion): `src/runtime/agent-runner.ts`
 - OAuth token extraction and persistence: `src/execution/token.ts`

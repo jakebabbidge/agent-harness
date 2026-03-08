@@ -28,7 +28,7 @@ Abstraction layer over agent backends. Provides a uniform interface for the exec
 1. Execution engine creates adapter instance -> calls `buildCommand()` to get the container command
 2. In-container runtime uses Agent SDK `query()` to run the agent
 3. Agent produces output -> written to output file by the runtime
-4. Question surfacing is handled by a programmatic PreToolUse hook in the runtime and IPC on the host (see [Execution](./execution.md))
+4. Question surfacing is handled by a `canUseTool` callback in the runtime and IPC on the host (see [Execution](./execution.md))
 
 ## Dependencies
 

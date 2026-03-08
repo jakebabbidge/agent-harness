@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { writeFileSync, readFileSync, renameSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { query, type HookCallback } from '@anthropic-ai/claude-agent-sdk';
+import { query, type CanUseTool } from '@anthropic-ai/claude-agent-sdk';
 
 const IPC_DIR = '/tmp/output';
 const POLL_INTERVAL_MS = 500;
@@ -14,31 +14,18 @@ function writeAtomic(filePath: string, data: string): void {
   renameSync(tmp, filePath);
 }
 
-function formatAnswerReason(
-  questions: Array<{ question: string }>,
-  answers: Record<string, string>,
-): string {
-  const lines = ['The user was asked and provided the following answers:'];
-  for (const q of questions) {
-    const answer = answers[q.question];
-    if (answer !== undefined) {
-      lines.push(`Q: ${q.question}`);
-      lines.push(`A: ${answer}`);
-    }
-  }
-  return lines.join('\n');
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createAskUserQuestionHook(ipcDir: string): HookCallback {
-  return async (input) => {
-    const toolInput = (
-      input as { tool_input?: { questions?: Array<{ question: string }> } }
-    ).tool_input;
-    const questions = toolInput?.questions ?? [];
+export function createCanUseTool(ipcDir: string): CanUseTool {
+  return async (toolName, input) => {
+    if (toolName !== 'AskUserQuestion') {
+      return { behavior: 'allow' };
+    }
+
+    const questions =
+      (input.questions as Array<{ question: string }>) ?? [];
     const id = randomUUID();
 
     const questionFile = join(ipcDir, `question-${id}.json`);
@@ -53,19 +40,13 @@ export function createAskUserQuestionHook(ipcDir: string): HookCallback {
         const raw = readFileSync(answerFile, 'utf-8');
         const answer = JSON.parse(raw) as { answers: Record<string, string> };
         return {
-          hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'deny',
-            permissionDecisionReason: formatAnswerReason(
-              questions,
-              answer.answers,
-            ),
-          },
+          behavior: 'allow',
+          updatedInput: { ...input, answers: answer.answers },
         };
       }
     }
 
-    return {};
+    return { behavior: 'allow' };
   };
 }
 
@@ -89,14 +70,7 @@ async function main(): Promise<void> {
     options: {
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
-      hooks: {
-        PreToolUse: [
-          {
-            matcher: 'AskUserQuestion',
-            hooks: [createAskUserQuestionHook(IPC_DIR)],
-          },
-        ],
-      },
+      canUseTool: createCanUseTool(IPC_DIR),
     },
   })) {
     if ('result' in message) {
