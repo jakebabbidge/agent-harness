@@ -1,32 +1,14 @@
 import { Command } from 'commander';
 import {
-  executeRun,
   executeLogin,
   executeDebugContainer,
 } from '../execution/container-lifecycle.js';
 import { renderTemplate } from '../prompts/index.js';
-import { promptUserForAnswer } from './prompt.js';
-import type { OutboundMessage } from '../messages.js';
+import { RunSession } from '../run-session/index.js';
+import { renderApp } from '../ui/render.js';
 
 const DIM = '\x1b[2m';
 const RESET = '\x1b[0m';
-
-function handleStreamMessage(message: OutboundMessage): void {
-  switch (message.type) {
-    case 'thinking':
-      process.stderr.write(`${DIM}${message.content}${RESET}\n`);
-      break;
-    case 'text':
-      process.stderr.write(`${message.content}\n`);
-      break;
-    case 'tool_use':
-      process.stderr.write(`${DIM}[tool: ${message.name}]${RESET}\n`);
-      break;
-    case 'error':
-      process.stderr.write(`Error: ${message.error}\n`);
-      break;
-  }
-}
 
 const program = new Command();
 
@@ -69,11 +51,18 @@ program
           templatePath,
           variables: opts.var,
         });
-        const result = await executeRun(
+
+        const session = new RunSession();
+        const app = renderApp(session);
+        const resultPromise = session.addExecution(
+          'run-1',
+          templatePath,
           rendered,
-          promptUserForAnswer,
-          handleStreamMessage,
         );
+
+        const result = await resultPromise;
+        app.unmount();
+
         if (result.rawLogPath) {
           console.error(
             `${DIM}Raw container log: ${result.rawLogPath}${RESET}`,

@@ -10,14 +10,19 @@
     "start": "tsx src/main.ts",
     "build": "tsc",
     "test": "vitest run",
-    "lint": "eslint 'src/**/*.ts'",
-    "format": "prettier --check 'src/**/*.ts'"
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "format": "prettier --check 'src/**/*.{ts,tsx}'"
   },
   "dependencies": {
     "commander": "^13.1.0",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.8",
+    "ink": "^5.1.0",
+    "ink-spinner": "^5.0.0",
+    "react": "^18.3.1"
   },
   "devDependencies": {
+    "@types/react": "^18.3.18",
+    "ink-testing-library": "^4.0.0",
     "@anthropic-ai/claude-agent-sdk": "^0.2.71",
     "@types/node": "^25.3.5",
     "@typescript-eslint/eslint-plugin": "^8.28.0",

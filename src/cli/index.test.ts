@@ -5,12 +5,16 @@ vi.mock('../execution/container-lifecycle.js', () => ({
   executeLogin: vi.fn(),
 }));
 
-vi.mock('./prompt.js', () => ({
-  promptUserForAnswer: vi.fn(),
-}));
-
 vi.mock('../prompts/index.js', () => ({
   renderTemplate: vi.fn(),
+}));
+
+vi.mock('../run-session/index.js', () => ({
+  RunSession: vi.fn(),
+}));
+
+vi.mock('../ui/render.js', () => ({
+  renderApp: vi.fn(() => ({ unmount: vi.fn(), waitUntilExit: vi.fn() })),
 }));
 
 import { program } from './index.js';
