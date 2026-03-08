@@ -11,7 +11,11 @@ interface ExecutionDetailProps {
   showBackHint: boolean;
 }
 
-function formatMessage(message: OutboundMessage, index: number) {
+function formatMessage(
+  message: OutboundMessage,
+  index: number,
+  answeredQuestions: Map<string, Record<string, string>>,
+) {
   switch (message.type) {
     case 'thinking':
       return (
@@ -39,8 +43,20 @@ function formatMessage(message: OutboundMessage, index: number) {
           {message.result}
         </Text>
       );
-    case 'question':
-      return null;
+    case 'question': {
+      const answers = answeredQuestions.get(message.id);
+      if (!answers) return null;
+      return (
+        <Box key={index} flexDirection="column">
+          {message.questions.map((q) => (
+            <Box key={q.question} flexDirection="column">
+              <Text color="yellow">? {q.question}</Text>
+              <Text color="cyan"> {answers[q.question] ?? '(no answer)'}</Text>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
     default:
       return null;
   }
@@ -58,7 +74,9 @@ export function ExecutionDetail({
         <Text bold>{execution.label}</Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        {execution.messages.map((msg, i) => formatMessage(msg, i))}
+        {execution.messages.map((msg, i) =>
+          formatMessage(msg, i, execution.answeredQuestions),
+        )}
       </Box>
       {execution.pendingQuestion && (
         <Box marginTop={1}>

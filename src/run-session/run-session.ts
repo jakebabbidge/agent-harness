@@ -30,6 +30,7 @@ export class RunSession extends EventEmitter {
       status: 'pending',
       messages: [],
       pendingQuestion: null,
+      answeredQuestions: new Map(),
       result: null,
       error: null,
     };
@@ -86,6 +87,7 @@ export class RunSession extends EventEmitter {
       throw new Error(`No question resolver for execution "${executionId}"`);
     }
 
+    state.answeredQuestions.set(state.pendingQuestion.id, answers);
     state.pendingQuestion = null;
     state.status = 'running';
     this.emit('executionUpdated', state);

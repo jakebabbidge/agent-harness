@@ -14,6 +14,7 @@ export interface ExecutionState {
   status: ExecutionStatus;
   messages: OutboundMessage[];
   pendingQuestion: QuestionMessage | null;
+  answeredQuestions: Map<string, Record<string, string>>;
   result: RunResult | null;
   error: string | null;
 }
