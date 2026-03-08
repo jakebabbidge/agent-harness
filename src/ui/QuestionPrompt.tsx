@@ -78,9 +78,32 @@ interface SingleSelectInputProps {
 function SingleSelectInput({ item, onSubmit }: SingleSelectInputProps) {
   const options = item.options!;
   const otherIndex = options.length;
-  const totalItems = options.length + 1; // +1 for "Other"
+  const totalItems = options.length + 1;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mode, setMode] = useState<'select' | 'custom'>('select');
+
+  useInput(
+    (input, key) => {
+      if (key.upArrow) {
+        setSelectedIndex((i) => Math.max(0, i - 1));
+      } else if (key.downArrow) {
+        setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
+      } else if (key.return) {
+        if (selectedIndex === otherIndex) {
+          setMode('custom');
+        } else {
+          onSubmit(options[selectedIndex].label);
+        }
+      }
+      const num = parseInt(input, 10);
+      if (num >= 1 && num <= options.length) {
+        onSubmit(options[num - 1].label);
+      } else if (num === totalItems) {
+        setMode('custom');
+      }
+    },
+    { isActive: mode === 'select' },
+  );
 
   if (mode === 'custom') {
     return (
@@ -91,27 +114,6 @@ function SingleSelectInput({ item, onSubmit }: SingleSelectInputProps) {
       </Box>
     );
   }
-
-  useInput((input, key) => {
-    if (key.upArrow) {
-      setSelectedIndex((i) => Math.max(0, i - 1));
-    } else if (key.downArrow) {
-      setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
-    } else if (key.return) {
-      if (selectedIndex === otherIndex) {
-        setMode('custom');
-      } else {
-        onSubmit(options[selectedIndex].label);
-      }
-    }
-    // Number key shortcut
-    const num = parseInt(input, 10);
-    if (num >= 1 && num <= options.length) {
-      onSubmit(options[num - 1].label);
-    } else if (num === totalItems) {
-      setMode('custom');
-    }
-  });
 
   return (
     <Box flexDirection="column">
@@ -145,12 +147,43 @@ interface MultiSelectInputProps {
 
 function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
   const options = item.options!;
-  const customIndex = options.length; // index of "Add custom option" row
+  const customIndex = options.length;
   const totalItems = options.length + 1;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [toggled, setToggled] = useState<Set<number>>(new Set());
   const [customAnswers, setCustomAnswers] = useState<string[]>([]);
   const [mode, setMode] = useState<'select' | 'custom'>('select');
+
+  useInput(
+    (_input, key) => {
+      if (key.upArrow) {
+        setSelectedIndex((i) => Math.max(0, i - 1));
+      } else if (key.downArrow) {
+        setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
+      } else if (key.return) {
+        if (toggled.size === 0 && customAnswers.length === 0) return;
+        const labels = [...toggled].sort().map((i) => options[i].label);
+        const all = [...labels, ...customAnswers];
+        onSubmit(all.join(', '));
+      }
+      if (_input === ' ') {
+        if (selectedIndex === customIndex) {
+          setMode('custom');
+        } else {
+          setToggled((prev) => {
+            const next = new Set(prev);
+            if (next.has(selectedIndex)) {
+              next.delete(selectedIndex);
+            } else {
+              next.add(selectedIndex);
+            }
+            return next;
+          });
+        }
+      }
+    },
+    { isActive: mode === 'select' },
+  );
 
   if (mode === 'custom') {
     return (
@@ -167,34 +200,6 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
       </Box>
     );
   }
-
-  useInput((_input, key) => {
-    if (key.upArrow) {
-      setSelectedIndex((i) => Math.max(0, i - 1));
-    } else if (key.downArrow) {
-      setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
-    } else if (key.return) {
-      if (toggled.size === 0 && customAnswers.length === 0) return;
-      const labels = [...toggled].sort().map((i) => options[i].label);
-      const all = [...labels, ...customAnswers];
-      onSubmit(all.join(', '));
-    }
-    if (_input === ' ') {
-      if (selectedIndex === customIndex) {
-        setMode('custom');
-      } else {
-        setToggled((prev) => {
-          const next = new Set(prev);
-          if (next.has(selectedIndex)) {
-            next.delete(selectedIndex);
-          } else {
-            next.add(selectedIndex);
-          }
-          return next;
-        });
-      }
-    }
-  });
 
   return (
     <Box flexDirection="column">
