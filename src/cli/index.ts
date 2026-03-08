@@ -53,15 +53,12 @@ program
         });
 
         const session = new RunSession();
+        session.registerExecution('run-1', templatePath);
         const app = renderApp(session);
 
-        let runResult: Awaited<ReturnType<typeof session.addExecution>>;
+        let runResult: Awaited<ReturnType<typeof session.startExecution>>;
         try {
-          runResult = await session.addExecution(
-            'run-1',
-            templatePath,
-            rendered,
-          );
+          runResult = await session.startExecution('run-1', rendered);
         } catch (execError) {
           // Execution failed — wait for user to review and exit
           await app.waitUntilExit();

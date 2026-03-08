@@ -28,7 +28,27 @@ describe('RunSession', () => {
     session = new RunSession();
   });
 
-  it('should transition through pending → running → completed', async () => {
+  it('should register an execution in pending state', () => {
+    session.registerExecution('e1', 'test-run');
+
+    const exec = session.getExecution('e1');
+    expect(exec).toBeDefined();
+    expect(exec!.status).toBe('pending');
+    expect(exec!.label).toBe('test-run');
+  });
+
+  it('should emit executionAdded when registering', () => {
+    const added: string[] = [];
+    session.on('executionAdded', (exec) => {
+      added.push(exec.id);
+    });
+
+    session.registerExecution('e1', 'test-run');
+
+    expect(added).toEqual(['e1']);
+  });
+
+  it('should transition through running → completed on start', async () => {
     const statuses: string[] = [];
     session.on('executionUpdated', (exec) => {
       statuses.push(exec.status);
@@ -36,7 +56,8 @@ describe('RunSession', () => {
 
     mockExecuteRun.mockResolvedValue(makeResult());
 
-    await session.addExecution('e1', 'test-run', 'prompt text');
+    session.registerExecution('e1', 'test-run');
+    await session.startExecution('e1', 'prompt text');
 
     expect(statuses).toEqual(['running', 'completed']);
     expect(session.getExecution('e1')?.status).toBe('completed');
@@ -50,25 +71,20 @@ describe('RunSession', () => {
 
     mockExecuteRun.mockRejectedValue(new Error('docker not found'));
 
-    await expect(
-      session.addExecution('e1', 'test-run', 'prompt text'),
-    ).rejects.toThrow('docker not found');
+    session.registerExecution('e1', 'test-run');
+    await expect(session.startExecution('e1', 'prompt text')).rejects.toThrow(
+      'docker not found',
+    );
 
     expect(statuses).toEqual(['running', 'failed']);
     expect(session.getExecution('e1')?.status).toBe('failed');
     expect(session.getExecution('e1')?.error).toBe('docker not found');
   });
 
-  it('should emit executionAdded when adding an execution', async () => {
-    const added: string[] = [];
-    session.on('executionAdded', (exec) => {
-      added.push(exec.id);
-    });
-
-    mockExecuteRun.mockResolvedValue(makeResult());
-    await session.addExecution('e1', 'test-run', 'prompt');
-
-    expect(added).toEqual(['e1']);
+  it('should throw when starting an unknown execution', async () => {
+    await expect(session.startExecution('nope', 'prompt')).rejects.toThrow(
+      'Unknown execution',
+    );
   });
 
   it('should emit sessionCompleted when all executions finish', async () => {
@@ -76,7 +92,8 @@ describe('RunSession', () => {
     session.on('sessionCompleted', completed);
 
     mockExecuteRun.mockResolvedValue(makeResult());
-    await session.addExecution('e1', 'test-run', 'prompt');
+    session.registerExecution('e1', 'test-run');
+    await session.startExecution('e1', 'prompt');
 
     expect(completed).toHaveBeenCalledTimes(1);
   });
@@ -91,7 +108,8 @@ describe('RunSession', () => {
       },
     );
 
-    await session.addExecution('e1', 'test-run', 'prompt');
+    session.registerExecution('e1', 'test-run');
+    await session.startExecution('e1', 'prompt');
 
     const exec = session.getExecution('e1')!;
     expect(exec.messages).toHaveLength(3);
@@ -123,8 +141,8 @@ describe('RunSession', () => {
       },
     );
 
-    // Start the execution (will block on question)
-    const resultPromise = session.addExecution('e1', 'test-run', 'prompt');
+    session.registerExecution('e1', 'test-run');
+    const resultPromise = session.startExecution('e1', 'prompt');
 
     // Wait a tick for the question to be registered
     await new Promise((r) => setTimeout(r, 10));
@@ -148,9 +166,8 @@ describe('RunSession', () => {
     );
   });
 
-  it('should return executions from getExecutions()', async () => {
-    mockExecuteRun.mockResolvedValue(makeResult());
-    await session.addExecution('e1', 'run-1', 'prompt');
+  it('should return executions from getExecutions()', () => {
+    session.registerExecution('e1', 'run-1');
 
     const execs = session.getExecutions();
     expect(execs).toHaveLength(1);
@@ -162,7 +179,8 @@ describe('RunSession', () => {
     const result = makeResult({ output: 'my output', rawLogPath: '/tmp/log' });
     mockExecuteRun.mockResolvedValue(result);
 
-    await session.addExecution('e1', 'run-1', 'prompt');
+    session.registerExecution('e1', 'run-1');
+    await session.startExecution('e1', 'prompt');
 
     expect(session.getExecution('e1')?.result).toEqual(result);
   });

@@ -23,11 +23,7 @@ export class RunSession extends EventEmitter {
     return this.executions.get(id);
   }
 
-  async addExecution(
-    id: string,
-    label: string,
-    prompt: string,
-  ): Promise<RunResult> {
+  registerExecution(id: string, label: string): void {
     const state: ExecutionState = {
       id,
       label,
@@ -40,6 +36,13 @@ export class RunSession extends EventEmitter {
 
     this.executions.set(id, state);
     this.emit('executionAdded', state);
+  }
+
+  async startExecution(id: string, prompt: string): Promise<RunResult> {
+    const state = this.executions.get(id);
+    if (!state) {
+      throw new Error(`Unknown execution "${id}"`);
+    }
 
     state.status = 'running';
     this.emit('executionUpdated', state);
