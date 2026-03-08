@@ -147,10 +147,7 @@ function readLine(prompt: string): Promise<string> {
     });
     rl.question(prompt, (answer) => {
       rl.close();
-      // Pause stdin so it no longer holds the event loop open.
-      // createInterface resumes (flows) stdin; closing the readline
-      // removes its listener but leaves stdin in flowing mode, which
-      // prevents the process from exiting.
+      // createInterface resumes stdin; rl.close() doesn't pause it.
       process.stdin.pause();
       process.stdin.unref();
       resolve(answer);

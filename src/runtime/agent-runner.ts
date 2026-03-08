@@ -85,9 +85,6 @@ async function main(): Promise<void> {
       }
     };
     rl.on('line', onLine);
-    rl.on('close', () => {
-      // stdin closed before we got a prompt — handled below
-    });
   });
 
   if (!prompt) {
@@ -153,14 +150,12 @@ async function main(): Promise<void> {
     }
 
     emit({ type: 'result', result });
-    rl.close();
     process.exit(0);
   } catch (err) {
     emit({
       type: 'error',
       error: err instanceof Error ? err.message : String(err),
     });
-    rl.close();
     process.exit(1);
   }
 }

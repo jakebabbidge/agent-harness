@@ -76,7 +76,6 @@ export async function ensureImage(): Promise<void> {
 
 const CONTAINER_LOG_DIR = '/tmp/agent-log';
 const RAW_LOG_FILENAME = 'raw.jsonl';
-const CONTAINER_SHUTDOWN_TIMEOUT_MS = 5000;
 
 export interface RunResult {
   output: string;
@@ -145,22 +144,9 @@ export async function executeRun(
       }
     }
 
-    // Destroy stdout to release the stream — without this, any unread
-    // buffered data keeps the Readable open, which prevents the
-    // ChildProcess 'close' event from firing (it waits for all stdio
-    // streams to close).
-    stdout.destroy();
-
-    // Close stdin so the container process can exit gracefully
     stdin.end();
 
-    // Wait for container to exit, kill if it doesn't shut down in time
-    const killTimer = setTimeout(
-      () => child.kill(),
-      CONTAINER_SHUTDOWN_TIMEOUT_MS,
-    );
     const { exitCode, stderr } = await done;
-    clearTimeout(killTimer);
 
     if (!output && exitCode === 0) {
       output = '(no output produced)';
