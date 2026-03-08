@@ -19,6 +19,7 @@ RUN echo '{"type":"module"}' > /opt/agent-harness/package.json && \
     cd /opt/agent-harness && npm install @anthropic-ai/claude-agent-sdk@${AGENT_SDK_VERSION}
 
 # Environment
+ENV CLAUDE_CONFIG_DIR=/home/node/.claude
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
 USER node

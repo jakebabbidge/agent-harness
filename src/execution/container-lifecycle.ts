@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile, copyFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import {
   isDockerAvailable,
@@ -10,7 +10,6 @@ import {
 } from './docker.js';
 import { needsRebuild, computeContextHash, storeHash } from './image-hash.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
-import { loadToken } from './token.js';
 import {
   pollForQuestions,
   writeAnswer,
@@ -23,6 +22,7 @@ const IMAGE_TAG = 'agent-harness:latest';
 const CONTAINER_OUTPUT_DIR = '/tmp/output';
 const OUTPUT_FILENAME = 'result.txt';
 const PROMPT_FILENAME = 'prompt.txt';
+const CLAUDE_CONFIG_CONTAINER_PATH = '/home/node/.claude';
 
 export type QuestionHandler = (question: Question) => Promise<QuestionAnswer>;
 
@@ -108,9 +108,6 @@ export async function executeRun(
     // Write prompt to temp dir
     await writeFile(join(tempDir, PROMPT_FILENAME), prompt);
 
-    // Load OAuth token
-    const token = await loadToken();
-
     const command = adapter.buildCommand({
       promptPath: promptPathInContainer,
       outputPath: outputPathInContainer,
@@ -119,12 +116,17 @@ export async function executeRun(
     const { done } = spawnContainer({
       image: IMAGE_TAG,
       command,
-      volumes: [{ host: tempDir, container: CONTAINER_OUTPUT_DIR }],
+      volumes: [
+        {
+          host: join(homedir(), '.claude'),
+          container: CLAUDE_CONFIG_CONTAINER_PATH,
+        },
+        { host: tempDir, container: CONTAINER_OUTPUT_DIR },
+      ],
       capAdd: ['NET_ADMIN', 'NET_RAW'],
       env: {
         PROMPT_FILE: promptPathInContainer,
         OUTPUT_FILE: outputPathInContainer,
-        CLAUDE_CODE_OAUTH_TOKEN: token,
       },
     });
 
@@ -157,24 +159,40 @@ export async function executeRun(
 }
 
 export async function executeLogin(): Promise<void> {
-  const { extractAndSaveToken } = await import('./token.js');
-  await extractAndSaveToken();
+  await assertDockerAvailable();
+  await ensureImage();
+
+  const { exitCode } = await runInteractiveContainer({
+    image: IMAGE_TAG,
+    command: ['/bin/bash'],
+    volumes: [
+      {
+        host: join(homedir(), '.claude'),
+        container: CLAUDE_CONFIG_CONTAINER_PATH,
+      },
+    ],
+    capAdd: ['NET_ADMIN', 'NET_RAW'],
+  });
+
+  if (exitCode !== 0) {
+    throw new Error(`Login session exited with code ${exitCode}`);
+  }
 }
 
 export async function executeDebugContainer(): Promise<void> {
   await assertDockerAvailable();
   await ensureImage();
 
-  const token = await loadToken();
-
   const { exitCode } = await runInteractiveContainer({
     image: IMAGE_TAG,
     command: ['/bin/bash'],
-    volumes: [],
+    volumes: [
+      {
+        host: join(homedir(), '.claude'),
+        container: CLAUDE_CONFIG_CONTAINER_PATH,
+      },
+    ],
     capAdd: ['NET_ADMIN', 'NET_RAW'],
-    env: {
-      CLAUDE_CODE_OAUTH_TOKEN: token,
-    },
   });
 
   if (exitCode !== 0) {
