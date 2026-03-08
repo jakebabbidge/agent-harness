@@ -2,7 +2,12 @@ import { mkdtemp, readFile, rm, writeFile, copyFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { isDockerAvailable, buildImage, spawnContainer } from './docker.js';
+import {
+  isDockerAvailable,
+  buildImage,
+  spawnContainer,
+  runInteractiveContainer,
+} from './docker.js';
 import { needsRebuild, computeContextHash, storeHash } from './image-hash.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { loadToken } from './token.js';
@@ -154,4 +159,25 @@ export async function executeRun(
 export async function executeLogin(): Promise<void> {
   const { extractAndSaveToken } = await import('./token.js');
   await extractAndSaveToken();
+}
+
+export async function executeDebugContainer(): Promise<void> {
+  await assertDockerAvailable();
+  await ensureImage();
+
+  const token = await loadToken();
+
+  const { exitCode } = await runInteractiveContainer({
+    image: IMAGE_TAG,
+    command: ['/bin/bash'],
+    volumes: [],
+    capAdd: ['NET_ADMIN', 'NET_RAW'],
+    env: {
+      CLAUDE_CODE_OAUTH_TOKEN: token,
+    },
+  });
+
+  if (exitCode !== 0) {
+    throw new Error(`Debug container exited with code ${exitCode}`);
+  }
 }

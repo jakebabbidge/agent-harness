@@ -1,5 +1,9 @@
 import { Command } from 'commander';
-import { executeRun, executeLogin } from '../execution/container-lifecycle.js';
+import {
+  executeRun,
+  executeLogin,
+  executeDebugContainer,
+} from '../execution/container-lifecycle.js';
 import { renderTemplate } from '../prompts/index.js';
 import { promptUserForAnswer } from './prompt.js';
 
@@ -97,6 +101,20 @@ program
   .action(async () => {
     try {
       await executeLogin();
+    } catch (error) {
+      console.error((error as Error).message || 'An unexpected error occurred');
+      process.exit(1);
+    }
+  });
+
+program
+  .command('debug-container')
+  .description(
+    'Launch an interactive shell inside the agent container for debugging',
+  )
+  .action(async () => {
+    try {
+      await executeDebugContainer();
     } catch (error) {
       console.error((error as Error).message || 'An unexpected error occurred');
       process.exit(1);
