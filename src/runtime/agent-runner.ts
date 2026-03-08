@@ -121,6 +121,7 @@ async function main(): Promise<void> {
 
       if ('result' in message) {
         result = message.result as string;
+        break;
       } else if ('message' in message) {
         const sdkMessage = message.message as {
           role?: string;
@@ -152,12 +153,14 @@ async function main(): Promise<void> {
     }
 
     emit({ type: 'result', result });
+    rl.close();
     process.exit(0);
   } catch (err) {
     emit({
       type: 'error',
       error: err instanceof Error ? err.message : String(err),
     });
+    rl.close();
     process.exit(1);
   }
 }

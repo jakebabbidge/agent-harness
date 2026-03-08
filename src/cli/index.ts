@@ -19,9 +19,6 @@ function handleStreamMessage(message: OutboundMessage): void {
     case 'tool_use':
       process.stderr.write(`${DIM}[tool: ${message.name}]${RESET}\n`);
       break;
-    case 'result':
-      process.stderr.write(`${DIM}[result]${RESET}\n${message.result}\n`);
-      break;
     case 'error':
       process.stderr.write(`Error: ${message.error}\n`);
       break;
