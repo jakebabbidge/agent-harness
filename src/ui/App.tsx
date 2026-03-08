@@ -5,6 +5,8 @@ import { ExecutionDetail } from './ExecutionDetail.js';
 import { useRunSession } from './useRunSession.js';
 import type { RunSession } from '../run-session/index.js';
 
+const CLEAR = '\x1B[2J\x1B[H';
+
 interface AppProps {
   session: RunSession;
 }
@@ -29,7 +31,7 @@ export function App({ session }: AppProps) {
   useInput((_input, key) => {
     if (view === 'detail') {
       if (key.escape || _input === 'q') {
-        process.stdout.write('\x1B[2J\x1B[H');
+        process.stdout.write(CLEAR);
         setView('list');
         setSelectedExecutionId(null);
       }
@@ -41,6 +43,7 @@ export function App({ session }: AppProps) {
   });
 
   const handleSelect = useCallback((id: string) => {
+    process.stdout.write(CLEAR);
     setSelectedExecutionId(id);
     setView('detail');
   }, []);
