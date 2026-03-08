@@ -138,26 +138,18 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
   const totalItems = options.length + 1;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [toggled, setToggled] = useState<Set<number>>(new Set());
-  const [customAnswers, setCustomAnswers] = useState<string[]>([]);
   const [customText, setCustomText] = useState('');
 
   const onCustomRow = selectedIndex === customIndex;
+  const hasCustom = customText.trim().length > 0;
 
   useInput((_input, key) => {
     if (onCustomRow) {
       if (key.return) {
-        // Enter on custom row with text: add the custom entry
-        if (customText.trim()) {
-          setCustomAnswers((prev) => [...prev, customText.trim()]);
-          setCustomText('');
-          return;
-        }
-        // Enter on custom row with no text: confirm selection (if any)
-        if (toggled.size > 0 || customAnswers.length > 0) {
-          const labels = [...toggled].sort().map((i) => options[i].label);
-          const all = [...labels, ...customAnswers];
-          onSubmit(all.join(', '));
-        }
+        const labels = [...toggled].sort().map((i) => options[i].label);
+        if (hasCustom) labels.push(customText.trim());
+        if (labels.length === 0) return;
+        onSubmit(labels.join(', '));
         return;
       }
       if (key.upArrow) {
@@ -179,10 +171,10 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
     } else if (key.downArrow) {
       setSelectedIndex((i) => Math.min(totalItems - 1, i + 1));
     } else if (key.return) {
-      if (toggled.size === 0 && customAnswers.length === 0) return;
       const labels = [...toggled].sort().map((i) => options[i].label);
-      const all = [...labels, ...customAnswers];
-      onSubmit(all.join(', '));
+      if (hasCustom) labels.push(customText.trim());
+      if (labels.length === 0) return;
+      onSubmit(labels.join(', '));
     }
     if (_input === ' ') {
       setToggled((prev) => {
@@ -214,27 +206,22 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
       <Box>
         <Text color={onCustomRow ? 'cyan' : undefined}>
           {onCustomRow ? '❯' : ' '}{' '}
+          {hasCustom ? <Text color="green">[x]</Text> : <Text>[ ]</Text>}{' '}
         </Text>
-        {onCustomRow && customText ? (
+        {customText ? (
           <>
             <Text>{customText}</Text>
-            <Text dimColor>█</Text>
+            {onCustomRow && <Text dimColor>█</Text>}
           </>
         ) : (
           <Text dimColor>
-            {onCustomRow ? 'Type to add custom option…█' : 'Add custom option'}
+            {onCustomRow ? 'Type custom option…█' : 'Custom option'}
           </Text>
         )}
       </Box>
-      {customAnswers.map((c) => (
-        <Box key={c} marginLeft={4}>
-          <Text color="green">[x]</Text>
-          <Text> {c}</Text>
-        </Box>
-      ))}
       <Text dimColor>
         {onCustomRow
-          ? 'Type and Enter to add, Enter again to confirm'
+          ? 'Type to add, delete to remove, Enter to confirm'
           : 'Space to toggle, Enter to confirm (select at least one)'}
       </Text>
     </Box>
