@@ -16,6 +16,9 @@ function handleStreamMessage(message: OutboundMessage): void {
     case 'thinking':
       process.stderr.write(`${DIM}${message.content}${RESET}\n`);
       break;
+    case 'text':
+      process.stderr.write(`${message.content}\n`);
+      break;
     case 'tool_use':
       process.stderr.write(`${DIM}[tool: ${message.name}]${RESET}\n`);
       break;
@@ -71,9 +74,6 @@ program
           promptUserForAnswer,
           handleStreamMessage,
         );
-        if (result.output.trim()) {
-          console.log(result.output.trim());
-        }
         if (result.rawLogPath) {
           console.error(
             `${DIM}Raw container log: ${result.rawLogPath}${RESET}`,

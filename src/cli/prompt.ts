@@ -33,6 +33,9 @@ export async function promptUserForAnswer(
     }
   }
 
+  // Add new line after user selection
+  console.log('');
+
   return { type: 'answer', id: question.id, answers };
 }
 

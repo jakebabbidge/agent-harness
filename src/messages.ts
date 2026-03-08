@@ -17,6 +17,11 @@ export interface ThinkingMessage {
   content: string;
 }
 
+export interface TextMessage {
+  type: 'text';
+  content: string;
+}
+
 export interface ToolUseMessage {
   type: 'tool_use';
   name: string;
@@ -41,6 +46,7 @@ export interface ErrorMessage {
 
 export type OutboundMessage =
   | ThinkingMessage
+  | TextMessage
   | ToolUseMessage
   | QuestionMessage
   | ResultMessage
@@ -82,7 +88,7 @@ export function parseOutboundLine(line: string): OutboundMessage | null {
       parsed &&
       typeof parsed === 'object' &&
       typeof parsed.type === 'string' &&
-      ['thinking', 'tool_use', 'question', 'result', 'error'].includes(
+      ['thinking', 'text', 'tool_use', 'question', 'result', 'error'].includes(
         parsed.type,
       )
     ) {

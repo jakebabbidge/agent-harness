@@ -137,6 +137,8 @@ async function main(): Promise<void> {
           for (const block of sdkMessage.content) {
             if (block.type === 'thinking' && block.thinking) {
               emit({ type: 'thinking', content: block.thinking });
+            } else if (block.type === 'text' && block.text) {
+              emit({ type: 'text', content: block.text });
             } else if (block.type === 'tool_use' && block.name) {
               emit({
                 type: 'tool_use',

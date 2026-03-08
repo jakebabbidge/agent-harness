@@ -99,7 +99,7 @@ export async function executeRun(
   const rawLogPathInContainer = join(CONTAINER_LOG_DIR, RAW_LOG_FILENAME);
 
   try {
-    const { child, stdin, stdout, done } = spawnContainer({
+    const { stdin, stdout, done } = spawnContainer({
       image: IMAGE_TAG,
       command,
       volumes: [

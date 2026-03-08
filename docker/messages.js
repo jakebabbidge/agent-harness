@@ -8,7 +8,7 @@ export function parseOutboundLine(line) {
         if (parsed &&
             typeof parsed === 'object' &&
             typeof parsed.type === 'string' &&
-            ['thinking', 'tool_use', 'question', 'result', 'error'].includes(parsed.type)) {
+            ['thinking', 'text', 'tool_use', 'question', 'result', 'error'].includes(parsed.type)) {
             return parsed;
         }
         return null;
