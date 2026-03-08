@@ -26,9 +26,14 @@ function getDockerContextPath(): string {
   return join(currentDir, '..', '..', 'docker');
 }
 
-function getDistRuntimePath(): string {
+function getProjectRoot(): string {
   const currentDir = fileURLToPath(new URL('.', import.meta.url));
-  return join(currentDir, '..', 'runtime', 'agent-runner.js');
+  // Works from both src/execution/ (tsx) and dist/execution/ (node)
+  return join(currentDir, '..', '..');
+}
+
+function getDistRuntimePath(): string {
+  return join(getProjectRoot(), 'dist', 'runtime', 'agent-runner.js');
 }
 
 export async function assertDockerAvailable(): Promise<void> {
