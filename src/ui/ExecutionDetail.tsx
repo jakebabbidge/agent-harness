@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React, { useRef } from 'react';
+import { Box, Static, Text } from 'ink';
 import { StatusIcon } from './StatusIcon.js';
 import { QuestionPrompt } from './QuestionPrompt.js';
 import type { ExecutionState } from '../run-session/index.js';
@@ -11,41 +11,42 @@ interface ExecutionDetailProps {
   showBackHint: boolean;
 }
 
-function formatMessage(
-  message: OutboundMessage,
-  index: number,
-  answeredQuestions: Map<string, Record<string, string>>,
-) {
+interface StaticItem {
+  id: string;
+  message: OutboundMessage;
+  answeredQuestions: Map<string, Record<string, string>>;
+}
+
+function MessageLine({
+  message,
+  answeredQuestions,
+}: {
+  message: OutboundMessage;
+  answeredQuestions: Map<string, Record<string, string>>;
+}) {
   switch (message.type) {
     case 'thinking':
-      return (
-        <Text key={index} dimColor>
-          {message.content}
-        </Text>
-      );
+      return <Text dimColor>{message.content}</Text>;
     case 'text':
-      return <Text key={index}>{message.content}</Text>;
+      return <Text>{message.content}</Text>;
     case 'tool_use':
-      return (
-        <Text key={index} dimColor>
-          [tool: {message.name}]
-        </Text>
-      );
+      return <Text dimColor>[tool: {message.name}]</Text>;
     case 'error':
-      return (
-        <Text key={index} color="red">
-          Error: {message.error}
-        </Text>
-      );
+      return <Text color="red">Error: {message.error}</Text>;
+    case 'result':
+      return <Text color="green">{message.result}</Text>;
     case 'question': {
       const answers = answeredQuestions.get(message.id);
       if (!answers) return null;
       return (
-        <Box key={index} flexDirection="column">
+        <Box flexDirection="column">
           {message.questions.map((q) => (
             <Box key={q.question} flexDirection="column">
               <Text color="yellow">? {q.question}</Text>
-              <Text color="cyan"> {answers[q.question] ?? '(no answer)'}</Text>
+              <Text color="cyan">
+                {'  '}
+                {answers[q.question] ?? '(no answer)'}
+              </Text>
             </Box>
           ))}
         </Box>
@@ -61,17 +62,75 @@ export function ExecutionDetail({
   onAnswer,
   showBackHint,
 }: ExecutionDetailProps) {
+  // Track how many messages have been flushed to Static.
+  // Once flushed, they never re-render.
+  const flushedCountRef = useRef(0);
+
+  const messages = execution.messages;
+  const total = messages.length;
+
+  // All messages except the last one are finalized and can be static.
+  // Keep at least one message dynamic so the latest output is always visible.
+  const staticEnd = Math.max(flushedCountRef.current, total - 1);
+  flushedCountRef.current = staticEnd;
+
+  const staticItems: StaticItem[] = [];
+  for (let i = 0; i < staticEnd; i++) {
+    staticItems.push({
+      id: String(i),
+      message: messages[i],
+      answeredQuestions: execution.answeredQuestions,
+    });
+  }
+
+  const dynamicMessages = messages.slice(staticEnd);
+
   return (
     <Box flexDirection="column">
-      <Box gap={1}>
-        <StatusIcon status={execution.status} />
-        <Text bold>{execution.label}</Text>
+      <Static items={staticItems}>
+        {(item, index) => {
+          if (index === 0) {
+            return (
+              <Box key={item.id} flexDirection="column">
+                <Box gap={1}>
+                  <StatusIcon status={execution.status} />
+                  <Text bold>{execution.label}</Text>
+                </Box>
+                <MessageLine
+                  message={item.message}
+                  answeredQuestions={item.answeredQuestions}
+                />
+              </Box>
+            );
+          }
+          return (
+            <Box key={item.id}>
+              <MessageLine
+                message={item.message}
+                answeredQuestions={item.answeredQuestions}
+              />
+            </Box>
+          );
+        }}
+      </Static>
+
+      {staticEnd === 0 && (
+        <Box gap={1}>
+          <StatusIcon status={execution.status} />
+          <Text bold>{execution.label}</Text>
+        </Box>
+      )}
+
+      <Box flexDirection="column">
+        {dynamicMessages.map((msg, i) => (
+          <MessageLine
+            key={staticEnd + i}
+            message={msg}
+            answeredQuestions={execution.answeredQuestions}
+          />
+        ))}
       </Box>
-      <Box flexDirection="column" marginTop={1}>
-        {execution.messages.map((msg, i) =>
-          formatMessage(msg, i, execution.answeredQuestions),
-        )}
-      </Box>
+
       {execution.pendingQuestion && (
         <Box marginTop={1}>
           <QuestionPrompt
