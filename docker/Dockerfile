@@ -1,9 +1,13 @@
 FROM node:20
 
+ARG CLAUDE_CODE_VERSION=latest
 ARG AGENT_SDK_VERSION=latest
 
 # Install iptables for firewall
 RUN apt-get update && apt-get install -y iptables && rm -rf /var/lib/apt/lists/*
+
+# Install Claude Code globally (the Agent SDK spawns it as a subprocess)
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 # Copy firewall init script
 COPY init-firewall.sh /usr/local/bin/init-firewall.sh
