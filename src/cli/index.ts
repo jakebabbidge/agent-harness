@@ -54,26 +54,34 @@ program
 
         const session = new RunSession();
         const app = renderApp(session);
-        const resultPromise = session.addExecution(
-          'run-1',
-          templatePath,
-          rendered,
-        );
 
-        const result = await resultPromise;
-        app.unmount();
+        let runResult: Awaited<ReturnType<typeof session.addExecution>>;
+        try {
+          runResult = await session.addExecution(
+            'run-1',
+            templatePath,
+            rendered,
+          );
+        } catch (execError) {
+          // Execution failed — wait for user to review and exit
+          await app.waitUntilExit();
+          throw execError;
+        }
 
-        if (result.rawLogPath) {
+        // Hold the UI open until the user presses q
+        await app.waitUntilExit();
+
+        if (runResult.rawLogPath) {
           console.error(
-            `${DIM}Raw container log: ${result.rawLogPath}${RESET}`,
+            `${DIM}Raw container log: ${runResult.rawLogPath}${RESET}`,
           );
         }
-        if (result.exitCode !== 0) {
-          if (result.stderr) {
-            console.error(result.stderr);
+        if (runResult.exitCode !== 0) {
+          if (runResult.stderr) {
+            console.error(runResult.stderr);
           }
-          console.error(`Claude Code exited with code ${result.exitCode}`);
-          process.exit(result.exitCode);
+          console.error(`Claude Code exited with code ${runResult.exitCode}`);
+          process.exit(runResult.exitCode);
         }
       } catch (error) {
         console.error(

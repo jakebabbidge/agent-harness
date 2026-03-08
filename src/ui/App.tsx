@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useInput } from 'ink';
+import { useInput, useApp } from 'ink';
 import { ExecutionList } from './ExecutionList.js';
 import { ExecutionDetail } from './ExecutionDetail.js';
 import { useRunSession } from './useRunSession.js';
@@ -11,27 +11,30 @@ interface AppProps {
 
 export function App({ session }: AppProps) {
   const { executions } = useRunSession(session);
+  const { exit } = useApp();
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(
     null,
   );
   const [listIndex, setListIndex] = useState(0);
 
-  // Auto-select single execution into detail view
-  const effectiveView =
-    executions.length === 1 && view === 'list' ? 'detail' : view;
-  const effectiveExecutionId =
-    executions.length === 1 ? executions[0].id : selectedExecutionId;
+  const allDone = executions.every(
+    (e) => e.status === 'completed' || e.status === 'failed',
+  );
 
-  const selectedExecution = effectiveExecutionId
-    ? executions.find((e) => e.id === effectiveExecutionId)
+  const selectedExecution = selectedExecutionId
+    ? executions.find((e) => e.id === selectedExecutionId)
     : undefined;
 
   useInput((_input, key) => {
-    if (effectiveView === 'detail' && executions.length > 1) {
+    if (view === 'detail') {
       if (key.escape || _input === 'q') {
         setView('list');
         setSelectedExecutionId(null);
+      }
+    } else if (view === 'list') {
+      if (_input === 'q' && allDone) {
+        exit();
       }
     }
   });
@@ -43,19 +46,19 @@ export function App({ session }: AppProps) {
 
   const handleAnswer = useCallback(
     (answers: Record<string, string>) => {
-      if (effectiveExecutionId) {
-        session.answerQuestion(effectiveExecutionId, answers);
+      if (selectedExecutionId) {
+        session.answerQuestion(selectedExecutionId, answers);
       }
     },
-    [session, effectiveExecutionId],
+    [session, selectedExecutionId],
   );
 
-  if (effectiveView === 'detail' && selectedExecution) {
+  if (view === 'detail' && selectedExecution) {
     return (
       <ExecutionDetail
         execution={selectedExecution}
         onAnswer={handleAnswer}
-        showBackHint={executions.length > 1}
+        showBackHint={true}
       />
     );
   }
@@ -66,6 +69,7 @@ export function App({ session }: AppProps) {
       selectedIndex={listIndex}
       onSelectedIndexChange={setListIndex}
       onSelect={handleSelect}
+      allDone={allDone}
     />
   );
 }

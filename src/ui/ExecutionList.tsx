@@ -8,6 +8,7 @@ interface ExecutionListProps {
   selectedIndex: number;
   onSelectedIndexChange: (index: number) => void;
   onSelect: (id: string) => void;
+  allDone: boolean;
 }
 
 export function ExecutionList({
@@ -15,6 +16,7 @@ export function ExecutionList({
   selectedIndex,
   onSelectedIndexChange,
   onSelect,
+  allDone,
 }: ExecutionListProps) {
   useInput((_input, key) => {
     if (key.upArrow) {
@@ -46,7 +48,9 @@ export function ExecutionList({
           </Text>
         </Box>
       ))}
-      <Text dimColor>↑↓ navigate, Enter to view details</Text>
+      <Text dimColor>
+        ↑↓ navigate, Enter to view details{allDone ? ', q to exit' : ''}
+      </Text>
     </Box>
   );
 }
