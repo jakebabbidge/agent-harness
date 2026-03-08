@@ -37,12 +37,6 @@ function formatMessage(
           Error: {message.error}
         </Text>
       );
-    case 'result':
-      return (
-        <Text key={index} color="green">
-          {message.result}
-        </Text>
-      );
     case 'question': {
       const answers = answeredQuestions.get(message.id);
       if (!answers) return null;

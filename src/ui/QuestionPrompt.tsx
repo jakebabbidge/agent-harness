@@ -111,9 +111,7 @@ function SingleSelectInput({ item, onSubmit }: SingleSelectInputProps) {
             <Text dimColor>█</Text>
           </>
         ) : (
-          <Text dimColor>
-            {onOtherRow ? 'Type your answer…█' : 'Other (type your own)'}
-          </Text>
+          <Text dimColor>Type your answer…</Text>
         )}
       </Box>
       <Text dimColor>
@@ -214,9 +212,7 @@ function MultiSelectInput({ item, onSubmit }: MultiSelectInputProps) {
             {onCustomRow && <Text dimColor>█</Text>}
           </>
         ) : (
-          <Text dimColor>
-            {onCustomRow ? 'Type custom option…█' : 'Custom option'}
-          </Text>
+          <Text dimColor>Type custom option…</Text>
         )}
       </Box>
       <Text dimColor>
