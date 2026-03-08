@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Box, Static, Text } from 'ink';
+import React, { useState, useEffect } from 'react';
+import { Box, Text, useInput, useStdout } from 'ink';
 import { StatusIcon } from './StatusIcon.js';
 import { QuestionPrompt } from './QuestionPrompt.js';
 import type { ExecutionState } from '../run-session/index.js';
@@ -9,12 +9,6 @@ interface ExecutionDetailProps {
   execution: ExecutionState;
   onAnswer: (answers: Record<string, string>) => void;
   showBackHint: boolean;
-}
-
-interface StaticItem {
-  id: string;
-  message: OutboundMessage;
-  answeredQuestions: Map<string, Record<string, string>>;
 }
 
 function MessageLine({
@@ -57,79 +51,87 @@ function MessageLine({
   }
 }
 
+// Reserve lines for: header (1) + blank line (1) + hint (2) + question prompt (~8 worst case)
+const CHROME_LINES = 12;
+
 export function ExecutionDetail({
   execution,
   onAnswer,
   showBackHint,
 }: ExecutionDetailProps) {
-  // Track how many messages have been flushed to Static.
-  // Once flushed, they never re-render.
-  const flushedCountRef = useRef(0);
+  const { stdout } = useStdout();
+  const termHeight = stdout?.rows ?? 24;
+  const viewportSize = Math.max(1, termHeight - CHROME_LINES);
 
   const messages = execution.messages;
-  const total = messages.length;
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [autoScroll, setAutoScroll] = useState(true);
 
-  // All messages except the last one are finalized and can be static.
-  // Keep at least one message dynamic so the latest output is always visible.
-  const staticEnd = Math.max(flushedCountRef.current, total - 1);
-  flushedCountRef.current = staticEnd;
+  // Auto-scroll to bottom when new messages arrive (if user hasn't scrolled up)
+  useEffect(() => {
+    if (autoScroll) {
+      const maxOffset = Math.max(0, messages.length - viewportSize);
+      setScrollOffset(maxOffset);
+    }
+  }, [messages.length, autoScroll, viewportSize]);
 
-  const staticItems: StaticItem[] = [];
-  for (let i = 0; i < staticEnd; i++) {
-    staticItems.push({
-      id: String(i),
-      message: messages[i],
-      answeredQuestions: execution.answeredQuestions,
-    });
-  }
+  useInput(
+    (_input, key) => {
+      if (key.upArrow || _input === 'k') {
+        setAutoScroll(false);
+        setScrollOffset((o) => Math.max(0, o - 1));
+      } else if (key.downArrow || _input === 'j') {
+        setScrollOffset((o) => {
+          const maxOffset = Math.max(0, messages.length - viewportSize);
+          const next = Math.min(maxOffset, o + 1);
+          if (next >= maxOffset) {
+            setAutoScroll(true);
+          }
+          return next;
+        });
+      }
+    },
+    { isActive: !execution.pendingQuestion },
+  );
 
-  const dynamicMessages = messages.slice(staticEnd);
+  const maxOffset = Math.max(0, messages.length - viewportSize);
+  const visibleMessages = messages.slice(
+    scrollOffset,
+    scrollOffset + viewportSize,
+  );
+
+  const atBottom = scrollOffset >= maxOffset;
+  const atTop = scrollOffset === 0;
 
   return (
     <Box flexDirection="column">
-      <Static items={staticItems}>
-        {(item, index) => {
-          if (index === 0) {
-            return (
-              <Box key={item.id} flexDirection="column">
-                <Box gap={1}>
-                  <StatusIcon status={execution.status} />
-                  <Text bold>{execution.label}</Text>
-                </Box>
-                <MessageLine
-                  message={item.message}
-                  answeredQuestions={item.answeredQuestions}
-                />
-              </Box>
-            );
-          }
-          return (
-            <Box key={item.id}>
-              <MessageLine
-                message={item.message}
-                answeredQuestions={item.answeredQuestions}
-              />
-            </Box>
-          );
-        }}
-      </Static>
+      <Box gap={1}>
+        <StatusIcon status={execution.status} />
+        <Text bold>{execution.label}</Text>
+        {messages.length > viewportSize && (
+          <Text dimColor>
+            [{scrollOffset + 1}-
+            {Math.min(scrollOffset + viewportSize, messages.length)}/
+            {messages.length}]
+          </Text>
+        )}
+      </Box>
 
-      {staticEnd === 0 && (
-        <Box gap={1}>
-          <StatusIcon status={execution.status} />
-          <Text bold>{execution.label}</Text>
-        </Box>
-      )}
+      {!atTop && <Text dimColor>{'  ↑ more above'}</Text>}
 
-      <Box flexDirection="column">
-        {dynamicMessages.map((msg, i) => (
+      <Box flexDirection="column" marginTop={atTop ? 1 : 0}>
+        {visibleMessages.map((msg, i) => (
           <MessageLine
-            key={staticEnd + i}
+            key={scrollOffset + i}
             message={msg}
             answeredQuestions={execution.answeredQuestions}
           />
         ))}
       </Box>
+
+      {!atBottom && messages.length > viewportSize && (
+        <Text dimColor>{'  ↓ more below'}</Text>
+      )}
 
       {execution.pendingQuestion && (
         <Box marginTop={1}>
@@ -141,7 +143,11 @@ export function ExecutionDetail({
       )}
       {showBackHint && (
         <Box marginTop={1}>
-          <Text dimColor>Esc/q to go back</Text>
+          <Text dimColor>
+            {execution.pendingQuestion
+              ? 'Esc/q to go back'
+              : '↑↓/jk scroll, Esc/q to go back'}
+          </Text>
         </Box>
       )}
     </Box>
