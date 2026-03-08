@@ -29,6 +29,7 @@ export function App({ session }: AppProps) {
   useInput((_input, key) => {
     if (view === 'detail') {
       if (key.escape || _input === 'q') {
+        process.stdout.write('\x1B[2J\x1B[H');
         setView('list');
         setSelectedExecutionId(null);
       }
